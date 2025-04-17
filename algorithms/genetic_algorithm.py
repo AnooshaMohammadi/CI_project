@@ -1,18 +1,50 @@
 import numpy as np
 
-#creating initial binery population
+
 def initial_binary_population(pop_size, chromosome_length):
+    """
+    Create initial binery population.
+    Return a numpy array.
+
+    Arguments:
+    pop_size -- population size (a natural number)
+    chromosome_length -- number of genes in each chromosome (a natural number)
+    """
     return np.random.randint(0, 2, size=(pop_size, chromosome_length))
 
 
 #creating initial population with real numbers
 def initial_real_population(pop_size, chromosome_length, lower_bound, upper_bound):
+    """
+    Create initial real population.
+    Return a two-dimensional numpy array.
+
+    Arguments:
+    pop_size -- population size (a natural number)
+    chromosome_length -- number of genes in each chromosome (a natural number)
+    lower_bound, upper_bound -- two arguments that describe a interval for the boundaries of the population
+    """
     population = np.random.uniform(lower_bound, upper_bound, size=(pop_size, chromosome_length))
     return np.round(population, 2)
 
 
-def proportional_selection(population, fitness_values, num_parents):
+def fitness(population, problem_type):
+    """
+    Evaluate initial population's fitness.
+    Return a numpy array.
 
+    Arguments:
+    population -- initial population (a two-dimensional numpy array)
+    problem_type -- either min or max type
+    """
+    if problem_type == "max":
+        fitness_value = np.sum(np.square(population), axis=1)
+    elif problem_type == "min":
+        fitness_value = 1 / (1 + np.sum(np.square(population), axis=1))
+    return fitness_value
+
+
+def proportional_selection(population, fitness_values, num_parents):
     total_fitness = np.sum(fitness_values)
     probabilities = fitness_values / total_fitness
 
@@ -22,7 +54,6 @@ def proportional_selection(population, fitness_values, num_parents):
 
 
 def tournament_selection(population, fitness_values, num_parents, tournament_size=3):
-
     selected_parents = []
 
     for _ in range(num_parents):
