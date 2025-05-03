@@ -18,11 +18,11 @@ def initial_real_population(pop_size, chromosome_length, lower_bound, upper_boun
     """
     Create initial real population.
     Return a two-dimensional numpy array.
-
+    
     Arguments:
     pop_size -- population size (a natural number)
     chromosome_length -- number of genes in each chromosome (a natural number)
-    lower_bound, upper_bound -- two arguments that describe a interval for the boundaries of the population
+    lower_bound, upper_bound -- two arguments that describe an interval for the boundaries of the population
     """
     population = np.random.uniform(lower_bound, upper_bound, size=(pop_size, chromosome_length))
     return np.round(population, 2)
@@ -36,6 +36,8 @@ def fitness(population, problem_type):
     Arguments:
     population -- initial population (a two-dimensional numpy array)
     problem_type -- either min or max type
+
+    Type of fitness function: sum of squares. 
     """
     if problem_type == "max":
         fitness_value = np.sum(np.square(population), axis=1)
