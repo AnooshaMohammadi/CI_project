@@ -13,7 +13,6 @@ def initial_binary_population(pop_size, chromosome_length):
     return np.random.randint(0, 2, size=(pop_size, chromosome_length))
 
 
-#creating initial population with real numbers
 def initial_real_population(pop_size, chromosome_length, lower_bound, upper_bound):
     """
     Create initial real population.
@@ -25,6 +24,7 @@ def initial_real_population(pop_size, chromosome_length, lower_bound, upper_boun
     lower_bound, upper_bound -- two arguments that describe an interval for the boundaries of the population
     """
     population = np.random.uniform(lower_bound, upper_bound, size=(pop_size, chromosome_length))
+    
     return np.round(population, 2)
 
 
@@ -40,10 +40,12 @@ def fitness(population, problem_type):
     Type of fitness function: sum of squares. 
     """
     if problem_type == "max":
-        fitness_value = np.sum(np.square(population), axis=1)
+        fitness_values = np.sum(np.square(population), axis=1)
     elif problem_type == "min":
-        fitness_value = 1 / (1 + np.sum(np.square(population), axis=1))
-    return fitness_value
+        fitness_values = 1 / (1 + np.sum(np.square(population), axis=1))
+    
+    return fitness_values
+
 
 def random_selection(population, num_parents):
     """
@@ -56,7 +58,9 @@ def random_selection(population, num_parents):
     """
     selected_indices = np.random.choice(len(population), size=num_parents, replace=False)
     parents = population[selected_indices]
+    
     return parents
+
 
 def proportional_selection(population, fitness_values, num_parents):
     """
@@ -70,9 +74,39 @@ def proportional_selection(population, fitness_values, num_parents):
     """
     total_fitness = np.sum(fitness_values)
     probabilities = fitness_values / total_fitness
-    
     # Choose parents based on probability distribution
     selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
+    
+    return population[selected_indices]
+
+
+def rank_based_selection(population, fitness_values, num_parents, problem_type):
+    """
+    Perform rank-based selection to choose parents from the population.
+    Return a two-dimensional numpy array containing the selected parents.
+
+    Arguments:
+    population -- initial population (a two-dimensional numpy array)
+    fitness_values -- fitness values of each individual in the population (a one-dimensional numpy array)
+    num_parents -- number of parents to select (a natural number)
+    problem_type -- either min or max type
+    """
+    # Sort the fitness values and get the sorted indices
+    sorted_indices = np.argsort(fitness_values)
+    
+    # Assign ranks (lower rank means better fitness for maximization, higher rank for minimization)
+    if problem_type == "max":  # Assuming maximization problem
+        ranks = np.arange(1, len(fitness_values) + 1)[sorted_indices]
+    elif problem_type == "min":  # Assuming minimization problem
+        ranks = np.arange(len(fitness_values), 0, -1)[sorted_indices]
+    
+    # Calculate probabilities based on ranks
+    total_rank = np.sum(ranks)
+    probabilities = ranks / total_rank
+    # Choose parents based on probability distribution
+
+    selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
+    
     return population[selected_indices]
 
 
@@ -88,5 +122,6 @@ def tournament_selection(population, fitness_values, num_parents, tournament_siz
         # Select the individual with the highest fitness
         winner_index = indices[np.argmax(tournament_fitness)]
         selected_parents.append(population[winner_index])
-
+    
     return np.array(selected_parents)
+
