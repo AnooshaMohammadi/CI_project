@@ -13,14 +13,12 @@ fit_real = fitness(pop_real, "min")
 print("---")
 print('Binary population fitness:', fit_bin)
 print('Real population fitness:', fit_real)
-print("---")
 
-selected_rand = random_selection(pop_bin, fit_bin, 2)
+selected_rand = random_selection(pop_bin, 2)
 selected_pro_real = proportional_selection(pop_real, fit_real, 2)
 print("random selected parents (binary):\n", selected_rand)
 print("prportionaly selected parents (real):\n", selected_pro_real)
 print("---")
-
 end = timer()
 
 print('Elapsed time:', end - start) # time in seconds
