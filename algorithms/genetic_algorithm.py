@@ -45,11 +45,32 @@ def fitness(population, problem_type):
         fitness_value = 1 / (1 + np.sum(np.square(population), axis=1))
     return fitness_value
 
+def random_selection(population, num_parents):
+    """
+    Perform random selection to choose parents from the population.
+    Return a two-dimensional numpy array containing the selected parents.
+
+    Arguments:
+    population -- initial population (a two-dimensional numpy array)
+    num_parents -- number of parents to select (a natural number)
+    """
+    selected_indices = np.random.choice(len(population), size=num_parents, replace=False)
+    parents = population[selected_indices]
+    return parents
 
 def proportional_selection(population, fitness_values, num_parents):
+    """
+    Perform proportional selection to choose parents from the population.
+    Return a two-dimensional numpy array containing the selected parents.
+
+    Arguments:
+    population -- initial population (a two-dimensional numpy array)
+    fitness_values -- fitness values of each individual in the population (a one-dimensional numpy array)
+    num_parents -- number of parents to select (a natural number)
+    """
     total_fitness = np.sum(fitness_values)
     probabilities = fitness_values / total_fitness
-
+    
     # Choose parents based on probability distribution
     selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
     return population[selected_indices]
