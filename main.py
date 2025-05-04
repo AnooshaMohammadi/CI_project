@@ -24,7 +24,7 @@ selected_tru = truncation_selection(pop_bin, fit_bin, 2, 90, "min")
 #print("truncation selected parents (bin):\n", selected_tru)
 
 selected_tru_real = truncation_selection(pop_real, fit_real, 2, 90, "min")
-print("truncation selected parents (real):\n", selected_tru_real)
+#print("truncation selected parents (real):\n", selected_tru_real)
 
 print("---")
 print("---")

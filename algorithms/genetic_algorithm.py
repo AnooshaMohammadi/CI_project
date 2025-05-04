@@ -169,10 +169,9 @@ def truncation_selection(population, fitness_values, num_parents, t, problem_typ
         top_t_indices = sorted_indices[:int(np.ceil(len(population) * t / 100))]
     else:
         raise ValueError("problem_type must be either 'min' or 'max'")
-    print(top_t_indices)
+    
     # Select the top t_percent individuals
     top_t_population = population[top_t_indices]
-    print("top_t_population", top_t_population)
     
     # Randomly select num_parents from the top t_percent individuals
     selected_indices = np.random.choice(len(top_t_population), size=num_parents, replace=False)
