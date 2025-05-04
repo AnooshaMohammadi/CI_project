@@ -103,8 +103,8 @@ def rank_based_selection(population, fitness_values, num_parents, problem_type):
     # Calculate probabilities based on ranks
     total_rank = np.sum(ranks)
     probabilities = ranks / total_rank
+    
     # Choose parents based on probability distribution
-
     selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
     
     return population[selected_indices]
@@ -124,4 +124,45 @@ def tournament_selection(population, fitness_values, num_parents, tournament_siz
         selected_parents.append(population[winner_index])
     
     return np.array(selected_parents)
+
+import numpy as np
+
+def truncation_selection(population, fitness_values, num_parents, t, problem_type):
+    """
+    Perform truncation selection to choose parents from the population.
+    First sort the population by fitness values, then select the top t percent of the population,
+    and finally choose n parents from these t percent.
+
+    Return a two-dimensional numpy array containing the selected parents.
+
+    Arguments:
+    population -- initial population (a two-dimensional numpy array)
+    fitness_values -- fitness values of each individual in the population (a one-dimensional numpy array)
+    num_parents -- number of parents to select (a natural number)
+    t -- percentage of the population to consider (0 to 100)
+    problem_type -- either 'min' or 'max' type
+    """
+    if t <= 0 or t > 100:
+        raise ValueError("t_percent must be between 0 and 100 (exclusive of 0).")
+    
+    # Sort the fitness values and get the sorted indices
+    sorted_indices = np.argsort(fitness_values)
+    
+    if problem_type == "max":
+        # For maximization, select the top t_percent individuals
+        top_t_indices = sorted_indices[-int(np.ceil(len(population) * t / 100)):]
+    elif problem_type == "min":
+        # For minimization, select the bottom t_percent individuals
+        top_t_indices = sorted_indices[:int(np.ceil(len(population) * t / 100))]
+    else:
+        raise ValueError("problem_type must be either 'min' or 'max'")
+    
+    # Select the top t_percent individuals
+    top_t_population = population[top_t_indices]
+    
+    # Randomly select num_parents from the top t_percent individuals
+    selected_indices = np.random.choice(len(top_t_population), size=num_parents)
+    parents = top_t_population[selected_indices]
+    
+    return parents
 
