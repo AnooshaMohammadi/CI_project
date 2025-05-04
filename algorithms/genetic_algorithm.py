@@ -125,7 +125,6 @@ def tournament_selection(population, fitness_values, num_parents, tournament_siz
     
     return np.array(selected_parents)
 
-import numpy as np
 
 def truncation_selection(population, fitness_values, num_parents, t, problem_type):
     """
@@ -156,13 +155,56 @@ def truncation_selection(population, fitness_values, num_parents, t, problem_typ
         top_t_indices = sorted_indices[:int(np.ceil(len(population) * t / 100))]
     else:
         raise ValueError("problem_type must be either 'min' or 'max'")
-    
+    print(top_t_indices)
     # Select the top t_percent individuals
     top_t_population = population[top_t_indices]
+    print("top_t_population", top_t_population)
     
     # Randomly select num_parents from the top t_percent individuals
-    selected_indices = np.random.choice(len(top_t_population), size=num_parents)
+    selected_indices = np.random.choice(len(top_t_population), size=num_parents, replace=False)
     parents = top_t_population[selected_indices]
     
     return parents
+
+
+def simple_crossover(parents, a):
+    """
+    Perform simple crossover between two parents to produce two children.
+    The crossover point is chosen randomly.
+
+    Arguments:
+    parents -- a two-dimensional numpy array containing two parents
+               (shape: (2, chromosome_length))
+    a -- crossover parameter (a float between 0 and 1)
+
+    Returns:
+    Two children (two-dimensional numpy array)
+    """
+    if parents.ndim != 2 or parents.shape[0] != 2:
+        raise ValueError("Parents must be a two-dimensional numpy array with shape (2, chromosome_length).")
+    
+    if not (0 <= a <= 1):
+        raise ValueError("Crossover parameter 'a' must be between 0 and 1.")
+    
+    parent1 = parents[0]
+    parent2 = parents[1]
+    chromosome_length = len(parent1)
+    
+    # Randomly choose a crossover point
+    crossover_point = np.random.randint(1, chromosome_length)
+    
+    # Initialize children with zeros
+    child1 = np.zeros(chromosome_length)
+    child2 = np.zeros(chromosome_length)
+    
+    # Transfer the chosen part from parent1 to child1 and from parent2 to child2
+    child1[:crossover_point] = parent1[:crossover_point]
+    child2[:crossover_point] = parent2[:crossover_point]
+    
+    # Calculate the remaining part for both children
+    for i in range(crossover_point, chromosome_length):
+        child1[i] = a * (parent1[i] + parent2[i])
+        child2[i] = (1 - a) * (parent1[i] + parent2[i])
+    
+    return np.array([child1, child2])
 
