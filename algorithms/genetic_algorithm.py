@@ -27,6 +27,20 @@ def initial_real_population(pop_size, chromosome_length, lower_bound, upper_boun
     
     return np.round(population, 2)
 
+def initial_permutation_population(pop_size, chromosome_length):
+    """
+    Create initial population where each chromosome is a random permutation.
+    Return a two-dimensional numpy array.
+    
+    Arguments:
+    pop_size -- population size (a natural number)
+    chromosome_length -- number of genes in each chromosome (a natural number)
+    """
+    population = np.zeros((pop_size, chromosome_length), dtype=int)
+    for i in range(pop_size):
+        population[i] = np.random.permutation(chromosome_length)
+    return population
+
 
 def fitness(population, problem_type):
     """
@@ -207,4 +221,3 @@ def simple_crossover(parents, a):
         child2[i] = (1 - a) * (parent1[i] + parent2[i])
     
     return np.array([child1, child2])
-
