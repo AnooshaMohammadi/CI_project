@@ -42,22 +42,18 @@ def initial_permutation_population(pop_size, chromosome_length):
     return population
 
 
-def fitness(population, problem_type):
+def fitness(population, func: callable):
     """
-    Evaluate initial population's fitness.
-    Return a numpy array.
+    Evaluate the fitness of a population for a minimization problem.
 
     Arguments:
-    population -- initial population (a two-dimensional numpy array)
-    problem_type -- either min or max type
+    population -- 2D numpy array (each row is an individual)
+    func -- the benchmark function to evaluate
 
-    Type of fitness function: sum of squares. 
+    Returns:
+    fitness_values -- 1D numpy array of fitness values
     """
-    if problem_type == "max":
-        fitness_values = np.sum(np.square(population), axis=1)
-    elif problem_type == "min":
-        fitness_values = 1 / (1 + np.sum(np.square(population), axis=1))
-    
+    fitness_values = np.array([func(ind) for ind in population])
     return fitness_values
 
 
