@@ -5,7 +5,7 @@ start = timer()
 
 # --- Initialize populations ---
 pop_bin = initial_binary_population(50, 30)
-pop_real = initial_real_population(50, 30, -10, 10)
+pop_real = initial_real_population(5, 5, 0, 1)
 
 print('Binary population:\n', pop_bin)
 print('Real population:\n', pop_real)
@@ -33,13 +33,17 @@ print("Proportional selected parents (binary):\n", selected_pro_bin)
 print("Rank-based selected parents (binary):\n", selected_rank)
 print("Truncation selected parents (binary):\n", selected_tru)
 
-selected_tru_real = truncation_selection(pop_real, fit_real, 30, 90)
+selected_tru_real = truncation_selection(pop_real, fit_real, 4, 90)
 print("Truncation selected parents (real):\n", selected_tru_real)
 
 # --- Crossover ---
 cross_simple_child = simple_crossover(selected_tru_real)
+simple_arithmetic_crossover_child = simple_arithmetic_crossover(selected_tru_real)
+whole_arithmetic_crossover_child = whole_arithmetic_crossover(selected_tru_real)
 print("---")
 print("Children produced using simple crossover:\n", cross_simple_child)
+print("Children produced using simple_arithmetic_crossover:\n", simple_arithmetic_crossover_child)
+print("Children produced using whole_arithmetic_crossover:\n", whole_arithmetic_crossover_child)
 
 end = timer()
 print("---")

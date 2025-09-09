@@ -25,7 +25,7 @@ def initial_real_population(pop_size, chromosome_length, lower_bound, upper_boun
     """
     population = np.random.uniform(lower_bound, upper_bound, size=(pop_size, chromosome_length))
     
-    return np.round(population, 2)
+    return np.round(population, 1)
 
 def initial_permutation_population(pop_size, chromosome_length):
     """
@@ -180,34 +180,118 @@ def simple_crossover(parents, a=0.5, crossover_rate=0.75):
 
     children = []
 
-    # Iterate over parent pairs
     for i in range(0, num_parents, 2):
         parent1 = parents[i]
         parent2 = parents[i+1]
 
-        # Check crossover probability
         if np.random.rand() < crossover_rate:
             # Random crossover point
             crossover_point = np.random.randint(1, chromosome_length)
             
-            # Initialize children
             child1 = np.zeros(chromosome_length)
             child2 = np.zeros(chromosome_length)
             
-            # Copy first segment
             child1[:crossover_point] = parent1[:crossover_point]
             child2[:crossover_point] = parent2[:crossover_point]
-            
-            # Apply crossover on remaining segment
+
             for j in range(crossover_point, chromosome_length):
                 child1[j] = a * (parent1[j] + parent2[j])
                 child2[j] = (1 - a) * (parent1[j] + parent2[j])
         else:
-            # No crossover → children are copies of parents
             child1 = parent1.copy()
             child2 = parent2.copy()
         
         children.append(child1)
         children.append(child2)
 
-    return np.array(children)
+    return np.round(children, 1)
+
+
+def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
+    """
+    Perform Simple Arithmetic Crossover.
+    
+    Only one gene per pair is modified using:
+    - Child1[pos] = a * (parent1[pos] + parent2[pos])
+    - Child2[pos] = (1 - a) * (parent1[pos] + parent2[pos])
+    
+    All other genes are copied directly from parents.
+
+    Arguments:
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    alpha -- crossover parameter (0 <= alpha <= 1), scaling factor
+    crossover_rate -- probability of performing crossover for each pair
+
+    Returns:
+    children -- 2D numpy array of offspring (same shape as parents)
+    """
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    for i in range(0, num_parents, 2):
+        parent1 = parents[i]
+        parent2 = parents[i+1]
+
+        if np.random.rand() < crossover_rate:
+            pos = np.random.randint(0, chromosome_length)
+
+            child1 = parent1.copy()
+            child2 = parent2.copy()
+
+            sum_val = parent1[pos] + parent2[pos]
+            child1[pos] = alpha * sum_val
+            child2[pos] = (1 - alpha) * sum_val
+        else:
+            child1 = parent1.copy()
+            child2 = parent2.copy()
+
+        children.append(child1)
+        children.append(child2)
+
+    return np.round(children, 1)
+
+
+def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
+    """
+    Perform Whole Arithmetic Crossover.
+    
+    All genes are modified using:
+    - Child1[i] = a * (parent1[i] + parent2[i])
+    - Child2[i] = (1 - a) * (parent1[i] + parent2[i])
+    
+    This results in both children being scaled sums of the parents.
+
+    Arguments:
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    alpha -- crossover parameter (0 <= alpha <= 1), scaling factor
+    crossover_rate -- probability of performing crossover for each pair
+
+    Returns:
+    children -- 2D numpy array of offspring (same shape as parents)
+    """
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    for i in range(0, num_parents, 2):
+        parent1 = parents[i]
+        parent2 = parents[i+1]
+        if np.random.rand() < crossover_rate:
+            sum_vals = parent1 + parent2
+            child1 = alpha * sum_vals
+            child2 = (1 - alpha) * sum_vals
+        else:
+            child1 = parent1.copy()
+            child2 = parent2.copy()
+
+        children.append(child1)
+        children.append(child2)
+
+    return np.round(children, 1)
