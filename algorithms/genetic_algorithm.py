@@ -327,7 +327,7 @@ def simple_crossover(parents, a=0.5, crossover_rate=0.75):
     return np.round(children, 1)
 
 
-def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
+def simple_arithmetic_crossover(parents, a=0.5, crossover_rate=0.75):
     """
     Perform Simple Arithmetic Crossover.
     Only one gene per pair is modified using:
@@ -360,8 +360,8 @@ def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
             child2 = parent2.copy()
 
             sum_val = parent1[pos] + parent2[pos]
-            child1[pos] = alpha * sum_val
-            child2[pos] = (1 - alpha) * sum_val
+            child1[pos] = a * sum_val
+            child2[pos] = (1 - a) * sum_val
         else:
             child1 = parent1.copy()
             child2 = parent2.copy()
@@ -372,7 +372,7 @@ def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
     return np.round(children, 1)
 
 
-def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
+def whole_arithmetic_crossover(parents, a=0.5, crossover_rate=0.75):
     """
     Perform Whole Arithmetic Crossover.
     All genes are modified using:
@@ -399,8 +399,8 @@ def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
         parent2 = parents[i+1]
         if np.random.rand() < crossover_rate:
             sum_vals = parent1 + parent2
-            child1 = alpha * sum_vals
-            child2 = (1 - alpha) * sum_vals
+            child1 = a * sum_vals
+            child2 = (1 - a) * sum_vals
         else:
             child1 = parent1.copy()
             child2 = parent2.copy()
@@ -508,11 +508,23 @@ def plus_strategy(parents, parents_fitness, offspring, offspring_fitness):
     Returns:
     next_generation -- 2D numpy array of next generation (size = len(parents))
     """
+    # Number of individuals to select for next generation
     num = len(parents)
+    # Combine populations
     combined_pop = np.vstack((parents, offspring))
     combined_fitness = np.concatenate((parents_fitness, offspring_fitness))
 
-    top_indices = np.argsort(combined_fitness)[-num:]  # higher fitness is better
+    # Check shapes
+    assert combined_pop.shape[0] == len(combined_fitness), \
+        "Population and fitness arrays must have the same length"
+
+    # Sort indices of combined_fitness in ascending order
+    sorted_indices = np.argsort(combined_fitness)
+
+    # Take top `mu` individuals with highest fitness
+    top_indices = sorted_indices[-num:]
+
+    # Return next generation
     return combined_pop[top_indices]
 
 
