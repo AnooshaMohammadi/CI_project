@@ -161,43 +161,55 @@ def truncation_selection(population, fitness_scores, num_parents, t):
     return top_t_population[selected_indices]
 
 
-def simple_crossover(parents, a):
+import numpy as np
+
+def simple_crossover(parents, a=0.5, crossover_rate=0.75):
     """
-    Perform simple crossover between two parents to produce two children.
-    The crossover point is chosen randomly.
+    Perform simple crossover on an array of parents (real-valued population).
 
     Arguments:
-    parents -- a two-dimensional numpy array containing two parents
-               (shape: (2, chromosome_length))
-    a -- crossover parameter (a float between 0 and 1)
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    a -- crossover parameter (0 <= a <= 1)
+    crossover_rate -- probability of performing crossover for each pair
 
     Returns:
-    Two children (two-dimensional numpy array)
+    children -- 2D numpy array of offspring (same shape as parents)
     """
-    if parents.ndim != 2 or parents.shape[0] != 2:
-        raise ValueError("Parents must be a two-dimensional numpy array with shape (2, chromosome_length).")
-    
-    if not (0 <= a <= 1):
-        raise ValueError("Crossover parameter 'a' must be between 0 and 1.")
-    
-    parent1 = parents[0]
-    parent2 = parents[1]
-    chromosome_length = len(parent1)
-    
-    # Randomly choose a crossover point
-    crossover_point = np.random.randint(1, chromosome_length)
-    
-    # Initialize children with zeros
-    child1 = np.zeros(chromosome_length)
-    child2 = np.zeros(chromosome_length)
-    
-    # Transfer the chosen part from parent1 to child1 and from parent2 to child2
-    child1[:crossover_point] = parent1[:crossover_point]
-    child2[:crossover_point] = parent2[:crossover_point]
-    
-    # Calculate the remaining part for both children
-    for i in range(crossover_point, chromosome_length):
-        child1[i] = a * (parent1[i] + parent2[i])
-        child2[i] = (1 - a) * (parent1[i] + parent2[i])
-    
-    return np.array([child1, child2])
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    # Iterate over parent pairs
+    for i in range(0, num_parents, 2):
+        parent1 = parents[i]
+        parent2 = parents[i+1]
+
+        # Check crossover probability
+        if np.random.rand() < crossover_rate:
+            # Random crossover point
+            crossover_point = np.random.randint(1, chromosome_length)
+            
+            # Initialize children
+            child1 = np.zeros(chromosome_length)
+            child2 = np.zeros(chromosome_length)
+            
+            # Copy first segment
+            child1[:crossover_point] = parent1[:crossover_point]
+            child2[:crossover_point] = parent2[:crossover_point]
+            
+            # Apply crossover on remaining segment
+            for j in range(crossover_point, chromosome_length):
+                child1[j] = a * (parent1[j] + parent2[j])
+                child2[j] = (1 - a) * (parent1[j] + parent2[j])
+        else:
+            # No crossover → children are copies of parents
+            child1 = parent1.copy()
+            child2 = parent2.copy()
+        
+        children.append(child1)
+        children.append(child2)
+
+    return np.array(children)

@@ -4,8 +4,8 @@ from timeit import default_timer as timer
 start = timer()
 
 # --- Initialize populations ---
-pop_bin = initial_binary_population(3, 3)
-pop_real = initial_real_population(3, 3, -10, 10)
+pop_bin = initial_binary_population(50, 30)
+pop_real = initial_real_population(50, 30, -10, 10)
 
 print('Binary population:\n', pop_bin)
 print('Real population:\n', pop_real)
@@ -33,11 +33,11 @@ print("Proportional selected parents (binary):\n", selected_pro_bin)
 print("Rank-based selected parents (binary):\n", selected_rank)
 print("Truncation selected parents (binary):\n", selected_tru)
 
-selected_tru_real = truncation_selection(pop_real, fit_real, 2, 90)
+selected_tru_real = truncation_selection(pop_real, fit_real, 30, 90)
 print("Truncation selected parents (real):\n", selected_tru_real)
 
 # --- Crossover ---
-cross_simple_child = simple_crossover(selected_tru_real, 0.3)
+cross_simple_child = simple_crossover(selected_tru_real)
 print("---")
 print("Children produced using simple crossover:\n", cross_simple_child)
 
