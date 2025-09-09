@@ -210,12 +210,9 @@ def simple_crossover(parents, a=0.5, crossover_rate=0.75):
 def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
     """
     Perform Simple Arithmetic Crossover.
-    
     Only one gene per pair is modified using:
     - Child1[pos] = a * (parent1[pos] + parent2[pos])
     - Child2[pos] = (1 - a) * (parent1[pos] + parent2[pos])
-    
-    All other genes are copied directly from parents.
 
     Arguments:
     parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
@@ -258,12 +255,9 @@ def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
 def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
     """
     Perform Whole Arithmetic Crossover.
-    
     All genes are modified using:
     - Child1[i] = a * (parent1[i] + parent2[i])
     - Child2[i] = (1 - a) * (parent1[i] + parent2[i])
-    
-    This results in both children being scaled sums of the parents.
 
     Arguments:
     parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
