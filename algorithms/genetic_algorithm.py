@@ -161,6 +161,48 @@ def truncation_selection(population, fitness_scores, num_parents, t):
     return top_t_population[selected_indices]
 
 #######################################
+######-Binery population crossover-######
+#######################################
+
+def one_point_crossover(parents, crossover_rate=0.75):
+    """
+    Perform one-point crossover on an array of parents (real-valued population).
+
+    Arguments:
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    crossover_rate -- probability of performing crossover for each pair
+
+    Returns:
+    children -- 2D numpy array of offspring (same shape as parents)
+    """
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    for i in range(0, num_parents, 2):
+        parent1 = parents[i]
+        parent2 = parents[i+1]
+
+        if np.random.rand() < crossover_rate:
+            # pick a crossover point (not 0, not end)
+            point = np.random.randint(1, chromosome_length)
+
+            child1 = np.concatenate((parent1[:point], parent2[point:]))
+            child2 = np.concatenate((parent2[:point], parent1[point:]))
+        else:
+            # no crossover → copy parents
+            child1 = parent1.copy()
+            child2 = parent2.copy()
+
+        children.append(child1)
+        children.append(child2)
+
+    return np.array(children)
+
+#######################################
 ######-Real population crossover-######
 #######################################
 
