@@ -364,17 +364,54 @@ def insert_mutation(population, mutation_rate=0.01):
     
     for i in range(num_individuals):
         if np.random.rand() < mutation_rate:
-            # Pick two distinct positions
             pos1, pos2 = np.sort(np.random.choice(chromosome_length, size=2, replace=False))
-            
-            # Always move the gene at the higher index (pos2) 
-            # to just after the lower index (pos1)
             value = mutated[i, pos2]
-            
-            # Delete the gene at pos2
             temp = np.delete(mutated[i], pos2)
-            
-            # Insert it just after pos1
             mutated[i] = np.insert(temp, pos1 + 1, value)
     
     return mutated
+
+
+#######################################
+######-Replacement strategy-#######
+#######################################
+
+def plus_strategy(parents, parents_fitness, offspring, offspring_fitness):
+    """
+    (μ + λ) Replacement:
+    Combine parents and offspring, then select the best μ individuals.
+    Keeps population size same as parents (μ).
+
+    Arguments:
+    parents -- 2D numpy array of current population
+    parents_fitness -- 1D numpy array of fitness scores of parents
+    offspring -- 2D numpy array of offspring
+    offspring_fitness -- 1D numpy array of fitness scores of offspring
+
+    Returns:
+    next_generation -- 2D numpy array of next generation (size = len(parents))
+    """
+    num = len(parents)
+    combined_pop = np.vstack((parents, offspring))
+    combined_fitness = np.concatenate((parents_fitness, offspring_fitness))
+
+    top_indices = np.argsort(combined_fitness)[-num:]  # higher fitness is better
+    return combined_pop[top_indices]
+
+
+def comma_strategy(offspring, offspring_fitness, num):
+    """
+    (μ, λ) Replacement:
+    Only offspring are considered; select the best μ individuals.
+    Keeps population size same as mu.
+
+    Arguments:
+    offspring -- 2D numpy array of offspring
+    offspring_fitness -- 1D numpy array of fitness scores of offspring
+    mu -- number of individuals to select for next generation (usually original population size)
+
+    Returns:
+    next_generation -- 2D numpy array of next generation (size = mu)
+    """
+    top_indices = np.argsort(offspring_fitness)[-num:]  # higher fitness is better
+    return offspring[top_indices]
