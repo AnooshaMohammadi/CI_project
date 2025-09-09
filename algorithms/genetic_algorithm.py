@@ -202,6 +202,44 @@ def one_point_crossover(parents, crossover_rate=0.75):
 
     return np.array(children)
 
+
+def two_point_crossover(parents, crossover_rate=0.75):
+    """
+    Perform two-point crossover on an array of parents (real-valued population).
+
+    Arguments:
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    crossover_rate -- probability of performing crossover for each pair
+
+    Returns:
+    children -- 2D numpy array of offspring (same shape as parents)
+    """
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    for i in range(0, num_parents, 2):
+        parent1 = parents[i]
+        parent2 = parents[i+1]
+
+        if np.random.rand() < crossover_rate:
+            # pick two distinct crossover points
+            p1, p2 = sorted(np.random.choice(range(1, chromosome_length), 2, replace=False))
+
+            child1 = np.concatenate((parent1[:p1], parent2[p1:p2], parent1[p2:]))
+            child2 = np.concatenate((parent2[:p1], parent1[p1:p2], parent2[p2:]))
+        else:
+            child1 = parent1.copy()
+            child2 = parent2.copy()
+
+        children.append(child1)
+        children.append(child2)
+
+    return np.array(children)
+
 #######################################
 ######-Real population crossover-######
 #######################################
