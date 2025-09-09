@@ -44,17 +44,22 @@ def initial_permutation_population(pop_size, chromosome_length):
 
 def fitness(population, func: callable):
     """
-    Evaluate the fitness of a population for a minimization problem.
-
+    Evaluate a population on a given benchmark function (minimization).
+    
     Arguments:
-    population -- 2D numpy array (each row is an individual)
-    func -- the benchmark function to evaluate
-
+    population -- 2D numpy array (each row is an individual solution)
+    func       -- callable benchmark function that accepts a 1D array (individual)
+    
     Returns:
-    fitness_values -- 1D numpy array of fitness values
+    raw_values     -- 1D numpy array of raw function values (lower is better)
+    fitness_scores -- 1D numpy array of converted scores (higher is better), 
+                      used for selection operators
     """
-    fitness_values = np.array([func(ind) for ind in population])
-    return fitness_values
+    raw_values = np.array([func(ind) for ind in population])
+    
+    fitness_scores = 1 / (1 + raw_values)
+    
+    return raw_values, fitness_scores
 
 
 def random_selection(population, num_parents):
@@ -72,108 +77,88 @@ def random_selection(population, num_parents):
     return parents
 
 
-def proportional_selection(population, fitness_values, num_parents):
+def proportional_selection(population, fitness_scores, num_parents):
     """
-    Perform proportional selection to choose parents from the population.
-    Return a two-dimensional numpy array containing the selected parents.
-
-    Arguments:
-    population -- initial population (a two-dimensional numpy array)
-    fitness_values -- fitness values of each individual in the population (a one-dimensional numpy array)
-    num_parents -- number of parents to select (a natural number)
-    """
-    total_fitness = np.sum(fitness_values)
-    probabilities = fitness_values / total_fitness
-    # Choose parents based on probability distribution
-    selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
+    Perform proportional (roulette wheel) selection to choose parents from the population.
     
+    Arguments:
+    population -- 2D numpy array (each row is an individual)
+    fitness_scores -- 1D numpy array (higher is better, from fitness function)
+    num_parents -- number of parents to select
+    
+    Returns:
+    selected parents -- 2D numpy array
+    """
+    total_fitness = np.sum(fitness_scores)
+    probabilities = fitness_scores / total_fitness
+    selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
     return population[selected_indices]
 
 
-def rank_based_selection(population, fitness_values, num_parents, problem_type):
+def rank_based_selection(population, fitness_scores, num_parents):
     """
     Perform rank-based selection to choose parents from the population.
-    Return a two-dimensional numpy array containing the selected parents.
-
+    
     Arguments:
-    population -- initial population (a two-dimensional numpy array)
-    fitness_values -- fitness values of each individual in the population (a one-dimensional numpy array)
-    num_parents -- number of parents to select (a natural number)
-    problem_type -- either min or max type
+    population -- 2D numpy array (each row is an individual)
+    fitness_scores -- 1D numpy array (higher is better, from fitness function)
+    num_parents -- number of parents to select
+    
+    Returns:
+    selected parents -- 2D numpy array
     """
-    # Sort the fitness values and get the sorted indices
-    sorted_indices = np.argsort(fitness_values)
-    
-    # Assign ranks (lower rank means better fitness for maximization, higher rank for minimization)
-    if problem_type == "max":  # Assuming maximization problem
-        ranks = np.arange(1, len(fitness_values) + 1)[sorted_indices]
-    elif problem_type == "min":  # Assuming minimization problem
-        ranks = np.arange(len(fitness_values), 0, -1)[sorted_indices]
-    
-    # Calculate probabilities based on ranks
-    total_rank = np.sum(ranks)
-    probabilities = ranks / total_rank
-    
-    # Choose parents based on probability distribution
+    sorted_indices = np.argsort(fitness_scores)
+    ranks = np.arange(1, len(fitness_scores)+1)[sorted_indices]
+    ranks = ranks[::-1]  # highest fitness gets highest rank
+    probabilities = ranks / np.sum(ranks)
     selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
-    
     return population[selected_indices]
 
 
-def tournament_selection(population, fitness_values, num_parents, tournament_size=3):
-    selected_parents = []
-
-    for _ in range(num_parents):
-        # Randomly pick tournament_size individuals
-        indices = np.random.choice(len(population), size=tournament_size, replace=False)
-        tournament = population[indices]
-        tournament_fitness = fitness_values[indices]
-
-        # Select the individual with the highest fitness
-        winner_index = indices[np.argmax(tournament_fitness)]
-        selected_parents.append(population[winner_index])
+def tournament_selection(population, fitness_scores, num_parents, tournament_size=3):
+    """
+    Perform tournament selection.
     
+    Arguments:
+    population -- 2D numpy array (each row is an individual)
+    fitness_scores -- 1D numpy array (higher is better)
+    num_parents -- number of parents to select
+    tournament_size -- number of individuals competing in each tournament
+    
+    Returns:
+    selected parents -- 2D numpy array
+    """
+    selected_parents = []
+    for _ in range(num_parents):
+        indices = np.random.choice(len(population), size=tournament_size, replace=False)
+        tournament_scores = fitness_scores[indices]
+        winner_index = indices[np.argmax(tournament_scores)]
+        selected_parents.append(population[winner_index])
     return np.array(selected_parents)
 
 
-def truncation_selection(population, fitness_values, num_parents, t, problem_type):
+def truncation_selection(population, fitness_scores, num_parents, t):
     """
-    Perform truncation selection to choose parents from the population.
-    First sort the population by fitness values, then select the top t percent of the population,
-    and finally choose n parents from these t percent.
-
-    Return a two-dimensional numpy array containing the selected parents.
-
+    Perform truncation selection.
+    
     Arguments:
-    population -- initial population (a two-dimensional numpy array)
-    fitness_values -- fitness values of each individual in the population (a one-dimensional numpy array)
-    num_parents -- number of parents to select (a natural number)
-    t -- percentage of the population to consider (0 to 100)
-    problem_type -- either 'min' or 'max' type
+    population -- 2D numpy array
+    fitness_scores -- 1D numpy array (higher is better)
+    num_parents -- number of parents to select
+    t -- top t percent of population to consider (0-100)
+    
+    Returns:
+    selected parents -- 2D numpy array
     """
     if t <= 0 or t > 100:
-        raise ValueError("t_percent must be between 0 and 100 (exclusive of 0).")
+        raise ValueError("t must be between 0 and 100 (exclusive).")
     
-    # Sort the fitness values and get the sorted indices
-    sorted_indices = np.argsort(fitness_values)
-    
-    if problem_type == "max":
-        # For maximization, select the top t_percent individuals
-        top_t_indices = sorted_indices[-int(np.ceil(len(population) * t / 100)):]
-    elif problem_type == "min":
-        # For minimization, select the bottom t_percent individuals
-        top_t_indices = sorted_indices[:int(np.ceil(len(population) * t / 100))]
-    else:
-        raise ValueError("problem_type must be either 'min' or 'max'")
-    
-    # Select the top t_percent individuals
+    sorted_indices = np.argsort(fitness_scores)  # ascending
+    top_t_count = int(np.ceil(len(population) * t / 100))
+    top_t_indices = sorted_indices[-top_t_count:]  # pick top t% based on fitness
     top_t_population = population[top_t_indices]
-    
-    # Randomly select num_parents from the top t_percent individuals
     selected_indices = np.random.choice(len(top_t_population), size=num_parents, replace=False)
-    parents = top_t_population[selected_indices]
-    
-    return parents
+    return top_t_population[selected_indices]
 
 
 def simple_crossover(parents, a):
