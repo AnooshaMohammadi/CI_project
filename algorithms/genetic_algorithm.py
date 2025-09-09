@@ -161,8 +161,6 @@ def truncation_selection(population, fitness_scores, num_parents, t):
     return top_t_population[selected_indices]
 
 
-import numpy as np
-
 def simple_crossover(parents, a=0.5, crossover_rate=0.75):
     """
     Perform simple crossover on an array of parents (real-valued population).
