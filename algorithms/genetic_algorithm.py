@@ -57,7 +57,7 @@ def fitness(population, func: callable):
     """
     raw_values = np.array([func(ind) for ind in population])
     
-    fitness_scores = 1 / (1 + raw_values)
+    fitness_scores = np.max(raw_values) - raw_values + 1e-6
     
     return raw_values, fitness_scores
 
