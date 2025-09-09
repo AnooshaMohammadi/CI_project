@@ -42,8 +42,17 @@ simple_arithmetic_crossover_child = simple_arithmetic_crossover(selected_tru_rea
 whole_arithmetic_crossover_child = whole_arithmetic_crossover(selected_tru_real)
 print("---")
 print("Children produced using simple crossover:\n", cross_simple_child)
-print("Children produced using simple_arithmetic_crossover:\n", simple_arithmetic_crossover_child)
-print("Children produced using whole_arithmetic_crossover:\n", whole_arithmetic_crossover_child)
+#print("Children produced using simple_arithmetic_crossover:\n", simple_arithmetic_crossover_child)
+#print("Children produced using whole_arithmetic_crossover:\n", whole_arithmetic_crossover_child)
+
+# --- Mutation ---
+#complement_mut_pop = complement_mutation(cross_simple_child, 10, -10)
+#swap_mut_pop = swap_mutation(cross_simple_child)
+insert_mut_pop = insert_mutation(cross_simple_child)
+print("---")
+#print("Children produced using complement muatation:\n", complement_mut_pop)
+#print("Children produced using swap mutation:\n", swap_mut_pop)
+print("Children produced using insert mutation:\n", insert_mut_pop)
 
 end = timer()
 print("---")

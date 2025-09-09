@@ -160,6 +160,9 @@ def truncation_selection(population, fitness_scores, num_parents, t):
     selected_indices = np.random.choice(len(top_t_population), size=num_parents, replace=False)
     return top_t_population[selected_indices]
 
+#######################################
+######-Real population crossover-######
+#######################################
 
 def simple_crossover(parents, a=0.5, crossover_rate=0.75):
     """
@@ -289,3 +292,89 @@ def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
         children.append(child2)
 
     return np.round(children, 1)
+
+#######################################
+######-Real population mutation-#######
+#######################################
+
+def complement_mutation(population, lower_bound=0, upper_bound=1, mutation_rate=0.01):
+    """
+    Perform complement mutation on a real-valued population.
+    For each individual, randomly select a gene and replace it with (upper bound + lower_bound - value).
+    
+    Arguments:
+    population -- 2D numpy array (each row is an individual)
+    mutation_rate -- probability of mutating each gene (float between 0 and 1)
+    
+    Returns:
+    mutated_population -- 2D numpy array after mutation
+    """
+    mutated = population.copy()
+    num_individuals, chromosome_length = mutated.shape
+    
+    for i in range(num_individuals):
+        for j in range(chromosome_length):
+            if np.random.rand() < mutation_rate:
+                mutated[i, j] = upper_bound + lower_bound - mutated[i, j]
+    
+    return np.round(mutated, 1)
+
+#######################################
+######-permutation population mutation-#######
+#######################################
+
+
+def swap_mutation(population, mutation_rate=0.01):
+    """
+    Perform swap mutation on a permutation-based population.
+    Randomly selects two positions in a chromosome and swaps their values.
+    
+    Arguments:
+    population -- 2D numpy array (each row is a permutation)
+    mutation_rate -- probability of performing mutation per individual
+    
+    Returns:
+    mutated_population -- 2D numpy array after mutation
+    """
+    mutated = population.copy()
+    num_individuals, chromosome_length = mutated.shape
+    
+    for i in range(num_individuals):
+        if np.random.rand() < mutation_rate:
+            pos1, pos2 = np.random.choice(chromosome_length, size=2, replace=False)
+            mutated[i, pos1], mutated[i, pos2] = mutated[i, pos2], mutated[i, pos1]
+    
+    return mutated
+
+
+def insert_mutation(population, mutation_rate=0.01):
+    """
+    Perform insert mutation on a permutation-based population.
+    Randomly selects a gene and inserts it into another position.
+    
+    Arguments:
+    population -- 2D numpy array (each row is a permutation)
+    mutation_rate -- probability of performing mutation per individual
+    
+    Returns:
+    mutated_population -- 2D numpy array after mutation
+    """
+    mutated = population.copy()
+    num_individuals, chromosome_length = mutated.shape
+    
+    for i in range(num_individuals):
+        if np.random.rand() < mutation_rate:
+            # Pick two distinct positions
+            pos1, pos2 = np.sort(np.random.choice(chromosome_length, size=2, replace=False))
+            
+            # Always move the gene at the higher index (pos2) 
+            # to just after the lower index (pos1)
+            value = mutated[i, pos2]
+            
+            # Delete the gene at pos2
+            temp = np.delete(mutated[i], pos2)
+            
+            # Insert it just after pos1
+            mutated[i] = np.insert(temp, pos1 + 1, value)
+    
+    return mutated
