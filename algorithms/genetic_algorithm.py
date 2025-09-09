@@ -240,6 +240,43 @@ def two_point_crossover(parents, crossover_rate=0.75):
 
     return np.array(children)
 
+
+def uniform_crossover(parents, crossover_rate=0.75, swap_prob=0.5):
+    """
+    Perform uniform crossover on an array of parents (real-valued population).
+
+    Arguments:
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    crossover_rate -- probability of performing crossover for each pair
+    swap_prob -- probability of swapping each gene
+
+    Returns:
+    children -- 2D numpy array of offspring (same shape as parents)
+    """
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    for i in range(0, num_parents, 2):
+        parent1 = parents[i]
+        parent2 = parents[i+1]
+
+        if np.random.rand() < crossover_rate:
+            mask = np.random.rand(chromosome_length) < swap_prob
+            child1 = np.where(mask, parent1, parent2)
+            child2 = np.where(mask, parent2, parent1)
+        else:
+            child1 = parent1.copy()
+            child2 = parent2.copy()
+
+        children.append(child1)
+        children.append(child2)
+
+    return np.array(children)
+
 #######################################
 ######-Real population crossover-######
 #######################################
