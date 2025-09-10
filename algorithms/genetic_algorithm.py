@@ -564,6 +564,32 @@ def cycle_crossover_batch(parents, crossover_rate=0.75):
     return np.array(children)
 
 #######################################
+######-binery population mutation-#######
+#######################################
+
+def bit_flip_mutation(population, mutation_rate=0.01):
+    """
+    Perform bit-flip mutation on a binary population.
+    Each gene has a probability of being flipped (0 -> 1, 1 -> 0).
+
+    Arguments:
+    population -- 2D numpy array (each row is an individual, genes are 0/1)
+    mutation_rate -- probability of mutating each gene (float between 0 and 1)
+
+    Returns:
+    mutated_population -- 2D numpy array after mutation
+    """
+    mutated = population.copy()
+    num_individuals, chromosome_length = mutated.shape
+
+    for i in range(num_individuals):
+        for j in range(chromosome_length):
+            if np.random.rand() < mutation_rate:
+                mutated[i, j] = 1 - mutated[i, j]  # flip 0<->1
+
+    return mutated
+
+#######################################
 ######-Real population mutation-#######
 #######################################
 
