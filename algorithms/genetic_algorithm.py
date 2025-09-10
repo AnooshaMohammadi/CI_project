@@ -55,11 +55,9 @@ def fitness(population, func: callable):
     fitness_scores -- 1D numpy array of converted scores (higher is better), 
                       used for selection operators
     """
-    raw_values = np.array([func(ind) for ind in population])
+    fitness_scores = np.array([func(ind) for ind in population])
     
-    fitness_scores = np.max(raw_values) - raw_values + 1e-6
-    
-    return raw_values, fitness_scores
+    return fitness_scores
 
 
 def random_selection(population, num_parents):
@@ -77,67 +75,92 @@ def random_selection(population, num_parents):
     return parents
 
 
-def proportional_selection(population, fitness_scores, num_parents):
+def proportional_selection(population, fitness_scores, num_parents, problem_type="min"):
     """
-    Perform proportional (roulette wheel) selection to choose parents from the population.
+    Perform proportional (roulette wheel) selection.
+    Works for both minimization and maximization problems,
+    even when fitness values are negative.
     
     Arguments:
     population -- 2D numpy array (each row is an individual)
-    fitness_scores -- 1D numpy array (higher is better, from fitness function)
+    fitness_scores -- 1D numpy array (raw objective values)
     num_parents -- number of parents to select
+    problem_type -- "min" or "max"
     
     Returns:
     selected parents -- 2D numpy array
     """
-    total_fitness = np.sum(fitness_scores)
-    probabilities = fitness_scores / total_fitness
+    if problem_type == "min":
+        # shift so all values are positive
+        adj_fitness = np.max(fitness_scores) - fitness_scores + 1e-8
+    else:
+        adj_fitness = fitness_scores - np.min(fitness_scores) + 1e-8  # ensure non-negative
+
+    probabilities = adj_fitness / np.sum(adj_fitness)
     selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
     return population[selected_indices]
 
 
-def rank_based_selection(population, fitness_scores, num_parents):
+def rank_based_selection(population, fitness_scores, num_parents, problem_type="min"):
     """
     Perform rank-based selection to choose parents from the population.
+    Works for both maximization and minimization problems.
     
     Arguments:
     population -- 2D numpy array (each row is an individual)
-    fitness_scores -- 1D numpy array (higher is better, from fitness function)
+    fitness_scores -- 1D numpy array of fitness values
     num_parents -- number of parents to select
+    problem_type -- "max" for maximization, "min" for minimization
     
     Returns:
     selected parents -- 2D numpy array
     """
-    sorted_indices = np.argsort(fitness_scores)
-    ranks = np.arange(1, len(fitness_scores)+1)[sorted_indices]
-    ranks = ranks[::-1]  # highest fitness gets highest rank
+
+    if problem_type == "max":
+        sorted_indices = np.argsort(fitness_scores)  # ascending
+    else:
+        sorted_indices = np.argsort(-fitness_scores)  # descending
+    # Assign ranks: highest rank for best fitness
+    ranks = np.arange(1, len(fitness_scores) + 1)[sorted_indices]
+    ranks = ranks[::-1]
+
     probabilities = ranks / np.sum(ranks)
     selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
     return population[selected_indices]
 
 
-def tournament_selection(population, fitness_scores, num_parents, tournament_size=3):
+def tournament_selection(population, fitness_scores, num_parents, problem_type="min"):
     """
     Perform tournament selection.
-    
+    Works for both maximization and minimization problems.
+
     Arguments:
     population -- 2D numpy array (each row is an individual)
-    fitness_scores -- 1D numpy array (higher is better)
+    fitness_scores -- 1D numpy array of fitness values
     num_parents -- number of parents to select
-    tournament_size -- number of individuals competing in each tournament
-    
+    problem_type -- "max" for maximization, "min" for minimization
+
     Returns:
     selected parents -- 2D numpy array
     """
+    tournament_size = max(2, int(num_parents * 1.5))  # ensure at least 2
     selected_parents = []
+
     for _ in range(num_parents):
         indices = np.random.choice(len(population), size=tournament_size, replace=False)
         tournament_scores = fitness_scores[indices]
-        winner_index = indices[np.argmax(tournament_scores)]
+
+        if problem_type == "max":
+            winner_index = indices[np.argmax(tournament_scores)]
+        else:
+            winner_index = indices[np.argmin(tournament_scores)]
+
         selected_parents.append(population[winner_index])
+
     return np.array(selected_parents)
 
 
-def truncation_selection(population, fitness_scores, num_parents, t):
+def truncation_selection(population, fitness_scores, num_parents, t=75, problem_type="min"):
     """
     Perform truncation selection.
     
@@ -150,12 +173,32 @@ def truncation_selection(population, fitness_scores, num_parents, t):
     Returns:
     selected parents -- 2D numpy array
     """
+    """
+    Perform truncation selection.
+    Works for both maximization and minimization problems.
+
+    Arguments:
+    population -- 2D numpy array
+    fitness_scores -- 1D numpy array
+    num_parents -- number of parents to select
+    t -- top t percent of population to consider (0-100)
+    problem_type -- "max" for maximization, "min" for minimization
+
+    Returns:
+    selected parents -- 2D numpy array
+    """
     if t <= 0 or t > 100:
         raise ValueError("t must be between 0 and 100 (exclusive).")
     
-    sorted_indices = np.argsort(fitness_scores)  # ascending
-    top_t_count = int(np.ceil(len(population) * t / 100))
-    top_t_indices = sorted_indices[-top_t_count:]  # pick top t% based on fitness
+    if problem_type == "max":
+        sorted_indices = np.argsort(fitness_scores)  # ascending
+        top_t_count = int(np.ceil(len(population) * t / 100))
+        top_t_indices = sorted_indices[-top_t_count:]  # pick top t% for max problem
+    else:  # min problem
+        sorted_indices = np.argsort(fitness_scores)  # ascending
+        top_t_count = int(np.ceil(len(population) * t / 100))
+        top_t_indices = sorted_indices[:top_t_count]  # pick top t% for min problem
+
     top_t_population = population[top_t_indices]
     selected_indices = np.random.choice(len(top_t_population), size=num_parents, replace=False)
     return top_t_population[selected_indices]
@@ -296,7 +339,7 @@ def simple_crossover(parents, a=0.5, crossover_rate=0.75):
     num_parents, chromosome_length = parents.shape
 
     if num_parents % 2 != 0:
-        raise ValueError("Number of parents must be even for pairing.")
+        num_parents = num_parents - 1
 
     children = []
 
@@ -327,7 +370,7 @@ def simple_crossover(parents, a=0.5, crossover_rate=0.75):
     return np.round(children, 1)
 
 
-def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
+def simple_arithmetic_crossover(parents, a=0.5, crossover_rate=0.75):
     """
     Perform Simple Arithmetic Crossover.
     Only one gene per pair is modified using:
@@ -345,7 +388,7 @@ def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
     num_parents, chromosome_length = parents.shape
 
     if num_parents % 2 != 0:
-        raise ValueError("Number of parents must be even for pairing.")
+        num_parents = num_parents - 1
 
     children = []
 
@@ -360,8 +403,8 @@ def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
             child2 = parent2.copy()
 
             sum_val = parent1[pos] + parent2[pos]
-            child1[pos] = alpha * sum_val
-            child2[pos] = (1 - alpha) * sum_val
+            child1[pos] = a * sum_val
+            child2[pos] = (1 - a) * sum_val
         else:
             child1 = parent1.copy()
             child2 = parent2.copy()
@@ -372,7 +415,7 @@ def simple_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
     return np.round(children, 1)
 
 
-def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
+def whole_arithmetic_crossover(parents, a=0.5, crossover_rate=0.75):
     """
     Perform Whole Arithmetic Crossover.
     All genes are modified using:
@@ -390,7 +433,7 @@ def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
     num_parents, chromosome_length = parents.shape
 
     if num_parents % 2 != 0:
-        raise ValueError("Number of parents must be even for pairing.")
+        num_parents = num_parents - 1
 
     children = []
 
@@ -399,8 +442,8 @@ def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
         parent2 = parents[i+1]
         if np.random.rand() < crossover_rate:
             sum_vals = parent1 + parent2
-            child1 = alpha * sum_vals
-            child2 = (1 - alpha) * sum_vals
+            child1 = a * sum_vals
+            child2 = (1 - a) * sum_vals
         else:
             child1 = parent1.copy()
             child2 = parent2.copy()
@@ -603,42 +646,38 @@ def insert_mutation(population, mutation_rate=0.01):
 ######-Replacement strategy-#######
 #######################################
 
-def plus_strategy(parents, parents_fitness, offspring, offspring_fitness):
+def plus_strategy(parents, parents_fitness, offspring, offspring_fitness, problem_type="min"):
     """
     (μ + λ) Replacement:
     Combine parents and offspring, then select the best μ individuals.
-    Keeps population size same as parents (μ).
-
-    Arguments:
-    parents -- 2D numpy array of current population
-    parents_fitness -- 1D numpy array of fitness scores of parents
-    offspring -- 2D numpy array of offspring
-    offspring_fitness -- 1D numpy array of fitness scores of offspring
-
-    Returns:
-    next_generation -- 2D numpy array of next generation (size = len(parents))
+    Works for both minimization and maximization problems.
     """
     num = len(parents)
     combined_pop = np.vstack((parents, offspring))
     combined_fitness = np.concatenate((parents_fitness, offspring_fitness))
 
-    top_indices = np.argsort(combined_fitness)[-num:]  # higher fitness is better
+    if problem_type == "max":
+        # Higher fitness = better
+        top_indices = np.argsort(combined_fitness)[-num:]
+    elif problem_type == "min":
+        # Lower raw value = better → so take lowest
+        top_indices = np.argsort(combined_fitness)[:num]
+    else:
+        raise ValueError("problem_type must be 'min' or 'max'")
+
     return combined_pop[top_indices]
 
 
-def comma_strategy(offspring, offspring_fitness, num):
+def comma_strategy(offspring, offspring_fitness, num, problem_type="min"):
     """
     (μ, λ) Replacement:
-    Only offspring are considered; select the best μ individuals.
-    Keeps population size same as mu.
-
-    Arguments:
-    offspring -- 2D numpy array of offspring
-    offspring_fitness -- 1D numpy array of fitness scores of offspring
-    mu -- number of individuals to select for next generation (usually original population size)
-
-    Returns:
-    next_generation -- 2D numpy array of next generation (size = mu)
+    Only offspring are considered, select best μ.
     """
-    top_indices = np.argsort(offspring_fitness)[-num:]  # higher fitness is better
+    if problem_type == "max":
+        top_indices = np.argsort(offspring_fitness)[-num:]
+    elif problem_type == "min":
+        top_indices = np.argsort(offspring_fitness)[:num]
+    else:
+        raise ValueError("problem_type must be 'min' or 'max'")
+
     return offspring[top_indices]
