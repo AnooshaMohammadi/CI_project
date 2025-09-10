@@ -411,6 +411,116 @@ def whole_arithmetic_crossover(parents, alpha=0.5, crossover_rate=0.75):
     return np.round(children, 1)
 
 #######################################
+######-permutation population crossover-######
+#######################################
+
+def order_crossover(parents, crossover_rate=0.75):
+    """
+    Perform two-point Order Crossover (OX) on a population of parents (permutation-based).
+
+    Arguments:
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    crossover_rate -- probability of performing crossover for each pair
+
+    Returns:
+    children -- 2D numpy array of offspring (same shape as parents)
+    """
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    for i in range(0, num_parents, 2):
+        p1 = parents[i]
+        p2 = parents[i+1]
+
+        if np.random.rand() < crossover_rate:
+            # choose two random crossover points
+            start, end = sorted(np.random.choice(range(chromosome_length), 2, replace=False))
+        
+            # initialize children
+            c1 = np.full(chromosome_length, -1)
+            c2 = np.full(chromosome_length, -1)
+
+            # copy slices
+            c1[start:end] = p1[start:end]
+            c2[start:end] = p2[start:end]
+
+            def fill(child, donor, start, end):
+                pos = end % chromosome_length
+                for j in range(chromosome_length):
+                    gene = donor[(end + j) % chromosome_length]
+                    if gene not in child:
+                        child[pos] = gene
+                        pos = (pos + 1) % chromosome_length
+                return child
+
+            c1 = fill(c1, p2, start, end)
+            c2 = fill(c2, p1, start, end)
+        else:
+            # no crossover, just copy
+            c1 = p1.copy()
+            c2 = p2.copy()
+
+        children.append(c1)
+        children.append(c2)
+
+    return np.array(children)
+
+
+def cycle_crossover_batch(parents, crossover_rate=0.75):
+    """
+    Perform Cycle Crossover (CX) on an array of parents (permutation population).
+
+    Arguments:
+    parents -- 2D numpy array of selected parents (shape: even_number x chromosome_length)
+    crossover_rate -- probability of performing crossover for each pair
+
+    Returns:
+    children -- 2D numpy array of offspring (same shape as parents)
+    """
+    num_parents, chromosome_length = parents.shape
+
+    if num_parents % 2 != 0:
+        raise ValueError("Number of parents must be even for pairing.")
+
+    children = []
+
+    for i in range(0, num_parents, 2):
+        parent1, parent2 = parents[i], parents[i+1]
+
+        if np.random.rand() < crossover_rate:
+            child1 = [-1] * chromosome_length
+            child2 = [-1] * chromosome_length
+
+            # Track cycles
+            visited = [False] * chromosome_length
+            cycle = 0
+
+            for start in range(chromosome_length):
+                if not visited[start]:
+                    idx = start
+                    while not visited[idx]:
+                        visited[idx] = True
+                        if cycle % 2 == 0:  # even cycle → copy parent1 to child1, parent2 to child2
+                            child1[idx] = parent1[idx]
+                            child2[idx] = parent2[idx]
+                        else:  # odd cycle → swap
+                            child1[idx] = parent2[idx]
+                            child2[idx] = parent1[idx]
+                        idx = np.where(parent1 == parent2[idx])[0][0]
+                    cycle += 1
+        else:
+            child1, child2 = parent1.copy(), parent2.copy()
+
+        children.append(child1)
+        children.append(child2)
+
+    return np.array(children)
+
+#######################################
 ######-Real population mutation-#######
 #######################################
 
