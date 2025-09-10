@@ -668,6 +668,55 @@ def insert_mutation(population, mutation_rate=0.01):
     return mutated
 
 
+def scramble_mutation(population, mutation_rate=0.01):
+    """
+    Perform scramble mutation on a permutation-based population.
+    Randomly selects two points (p1, p2) in a chromosome and scrambles the genes in between.
+
+    Arguments:
+    population -- 2D numpy array (each row is a permutation)
+    mutation_rate -- probability of performing mutation per individual
+
+    Returns:
+    mutated_population -- 2D numpy array after mutation
+    """
+    mutated = population.copy()
+    num_individuals, chromosome_length = mutated.shape
+
+    for i in range(num_individuals):
+        if np.random.rand() < mutation_rate:
+            # pick two cut points
+            p1, p2 = sorted(np.random.choice(chromosome_length, size=2, replace=False))
+            subseq = mutated[i, p1+1:p2].copy()
+            np.random.shuffle(subseq)
+            mutated[i, p1+1:p2] = subseq
+
+    return mutated
+
+
+def inversion_mutation(population, mutation_rate=0.01):
+    """
+    Perform inversion mutation on a permutation-based population.
+    Randomly selects two points (p1, p2) and reverses the genes in between.
+
+    Arguments:
+    population -- 2D numpy array (each row is a permutation)
+    mutation_rate -- probability of performing mutation per individual
+
+    Returns:
+    mutated_population -- 2D numpy array after mutation
+    """
+    mutated = population.copy()
+    num_individuals, chromosome_length = mutated.shape
+
+    for i in range(num_individuals):
+        if np.random.rand() < mutation_rate:
+            # pick two cut points
+            p1, p2 = sorted(np.random.choice(chromosome_length, size=2, replace=False))
+            mutated[i, p1+1:p2] = mutated[i, p1+1:p2][::-1]
+
+    return mutated
+
 #######################################
 ######-Replacement strategy-#######
 #######################################
