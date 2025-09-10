@@ -101,27 +101,35 @@ def proportional_selection(population, fitness_scores, num_parents, problem_type
     return population[selected_indices]
 
 
-def rank_based_selection(population, fitness_scores, num_parents):
+def rank_based_selection(population, fitness_scores, num_parents, problem_type="min"):
     """
     Perform rank-based selection to choose parents from the population.
+    Works for both maximization and minimization problems.
     
     Arguments:
     population -- 2D numpy array (each row is an individual)
-    fitness_scores -- 1D numpy array (higher is better, from fitness function)
+    fitness_scores -- 1D numpy array of fitness values
     num_parents -- number of parents to select
+    problem_type -- "max" for maximization, "min" for minimization
     
     Returns:
     selected parents -- 2D numpy array
     """
-    sorted_indices = np.argsort(fitness_scores)
-    ranks = np.arange(1, len(fitness_scores)+1)[sorted_indices]
-    ranks = ranks[::-1]  # highest fitness gets highest rank
+
+    if problem_type == "max":
+        sorted_indices = np.argsort(fitness_scores)  # ascending
+    else:
+        sorted_indices = np.argsort(-fitness_scores)  # descending
+    # Assign ranks: highest rank for best fitness
+    ranks = np.arange(1, len(fitness_scores) + 1)[sorted_indices]
+    ranks = ranks[::-1]
+
     probabilities = ranks / np.sum(ranks)
     selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
     return population[selected_indices]
 
 
-def tournament_selection(population, fitness_scores, num_parents, tournament_size=3):
+def tournament_selection(population, fitness_scores, num_parents):
     """
     Perform tournament selection.
     
@@ -134,6 +142,7 @@ def tournament_selection(population, fitness_scores, num_parents, tournament_siz
     Returns:
     selected parents -- 2D numpy array
     """
+    tournament_size = num_parents * 1.5
     selected_parents = []
     for _ in range(num_parents):
         indices = np.random.choice(len(population), size=tournament_size, replace=False)
