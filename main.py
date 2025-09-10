@@ -97,10 +97,6 @@ pop_size = 500
 chromosome_length = 2       # x1 and x2
 lower_bound = np.array([-1, -1])
 upper_bound = np.array([2, 1])
-mutation_rate = 0.15
-crossover_rate = 0.75
-a = 0.5
-max_fitness_calls = 40000
 
 # --- Run GA ---
 best_solution, best_fitness, fitness_history = genetic_algorithm(
@@ -113,10 +109,6 @@ best_solution, best_fitness, fitness_history = genetic_algorithm(
     crossover_func=whole_arithmetic_crossover,  # or simple_crossover, whole_arithmetic_crossover
     mutation_func=complement_mutation,
     replacement_func=plus_strategy,  # or comma_strategy
-    mutation_rate=mutation_rate,
-    crossover_rate=crossover_rate,
-    a=a,
-    max_fitness_calls=max_fitness_calls
 )
 
 print("Best solution:", best_solution)
