@@ -48,6 +48,7 @@ def genetic_algorithm(
     population = initial_real_population(pop_size, chromosome_length, lower_bound, upper_bound)
     fitness_calls = 0
     fitness_history = []
+    print(population)
 
     # Evaluate initial population
     fit = fitness(population, fitness_func)
@@ -64,8 +65,6 @@ def genetic_algorithm(
         # Evaluate offspring
         offspring_fit = fitness(offspring, fitness_func)
         fitness_calls += len(offspring)
-
-        print(fitness_calls)
 
         # Replacement to form next generation
         if replacement_func.__name__ == "plus_strategy":
@@ -117,7 +116,7 @@ best_solution, best_fitness, fitness_history = genetic_algorithm(
     lower_bound=lower_bound,
     upper_bound=upper_bound,
     fitness_func=adjiman,
-    selection_method=rank_based_selection,  # or tournament_selection, random_selection, etc.
+    selection_method=tournament_selection,  # or tournament_selection, random_selection, etc.
     crossover_func=whole_arithmetic_crossover,  # or simple_crossover, whole_arithmetic_crossover
     mutation_func=complement_mutation,
     replacement_func=plus_strategy  # or comma_strategy

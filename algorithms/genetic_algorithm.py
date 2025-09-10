@@ -129,26 +129,34 @@ def rank_based_selection(population, fitness_scores, num_parents, problem_type="
     return population[selected_indices]
 
 
-def tournament_selection(population, fitness_scores, num_parents):
+def tournament_selection(population, fitness_scores, num_parents, problem_type="min"):
     """
     Perform tournament selection.
-    
+    Works for both maximization and minimization problems.
+
     Arguments:
     population -- 2D numpy array (each row is an individual)
-    fitness_scores -- 1D numpy array (higher is better)
+    fitness_scores -- 1D numpy array of fitness values
     num_parents -- number of parents to select
-    tournament_size -- number of individuals competing in each tournament
-    
+    problem_type -- "max" for maximization, "min" for minimization
+
     Returns:
     selected parents -- 2D numpy array
     """
-    tournament_size = num_parents * 1.5
+    tournament_size = max(2, int(num_parents * 1.5))  # ensure at least 2
     selected_parents = []
+
     for _ in range(num_parents):
         indices = np.random.choice(len(population), size=tournament_size, replace=False)
         tournament_scores = fitness_scores[indices]
-        winner_index = indices[np.argmax(tournament_scores)]
+
+        if problem_type == "max":
+            winner_index = indices[np.argmax(tournament_scores)]
+        else:
+            winner_index = indices[np.argmin(tournament_scores)]
+
         selected_parents.append(population[winner_index])
+
     return np.array(selected_parents)
 
 
