@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import benchmarkfcns as bf
 from algorithms.genetic_algorithm import *
+from algorithms.benchmark import benchmark_functions
 from timeit import default_timer as timer
 
 # =============================
@@ -76,38 +77,14 @@ def genetic_algorithm(
 # =============================
 # Benchmark functions metadata
 # =============================
-benchmark_functions = [
-    {
-        "name": "ackleyn2",
-        "range": (-5.12, 5.12),
-        "dimension": 2,
-        "global_minima": 0.0,
-        "type": "unimodal"
-    },
-    {
-        "name": "ackley",
-        "range": (-32.768, 32.768),
-        "dimension": 2,
-        "global_minima": 0.0,
-        "type": "multimodal"
-    },
-    {
-        "name": "zimmerman",
-        "range": (-5.12, 5.12),
-        "dimension": 2,
-        "global_minima": 0.0,
-        "type": "multimodal"
-    },
-]
-
 
 # =============================
 # GA runner
 # =============================
-def run_ga_on_function(f_dict, num_runs=20):
-    lower_bound = np.array([f_dict["range"][0]] * f_dict["dimension"])
-    upper_bound = np.array([f_dict["range"][1]] * f_dict["dimension"])
-    chromosome_length = f_dict["dimension"]
+def run_ga_on_function(f, num_runs=20):
+    lower_bound = np.array([f.range[0]] * f.dimension)
+    upper_bound = np.array([f.range[1]] * f.dimension)
+    chromosome_length = f.dimension
 
     results = []
     for _ in range(num_runs):
@@ -116,7 +93,7 @@ def run_ga_on_function(f_dict, num_runs=20):
             chromosome_length=chromosome_length,
             lower_bound=lower_bound,
             upper_bound=upper_bound,
-            fitness_func=f_dict["name"],
+            fitness_func=f.name,  # pass the actual function object
             selection_method=truncation_selection,
             crossover_func=simple_crossover,
             mutation_func=complement_mutation,
@@ -128,6 +105,7 @@ def run_ga_on_function(f_dict, num_runs=20):
             max_fitness_calls=400
         )
         results.append(best_fitness)
+
     return np.mean(results), np.std(results)
 
 
@@ -136,12 +114,11 @@ def run_ga_on_function(f_dict, num_runs=20):
 # =============================
 def generate_info_table(func_list, filename):
     data = []
-    for f in func_list:
+    for func in func_list:
         data.append({
-            "Name": f["name"],
-            "Dimension": f["dimension"],
-            "Range": f["range"],
-            "Global Min": f["global_minima"]
+            "Name": func.name,
+            "Dimension": func.dimension,
+            "Global Min": func.global_minima
         })
     df = pd.DataFrame(data)
     df.to_csv(filename, index=False)
@@ -151,11 +128,11 @@ def generate_info_table(func_list, filename):
 def generate_results_table(func_list, filename):
     data = []
     for idx, f in enumerate(func_list, start=1):
-        print(f)
+        print(f.name)  # shows the function being processed
         avg, std = run_ga_on_function(f)
         data.append({
             "No": idx,
-            "Function": f["name"],
+            "Function": f.name,       # changed from f["name"] to f.name
             "GA Average": avg,
             "GA Std": std
         })
@@ -164,13 +141,14 @@ def generate_results_table(func_list, filename):
     return df
 
 
+
 # =============================
 # Run everything
 # =============================
 start = timer()
 
-unimodal_funcs = [f for f in benchmark_functions if f["type"] == "unimodal"]
-multimodal_funcs = [f for f in benchmark_functions if f["type"] == "multimodal"]
+unimodal_funcs = [f for f in benchmark_functions if f.type == "unimodal"]
+multimodal_funcs = [f for f in benchmark_functions if f.type == "multimodal"]
 
 print("Generating unimodal info table...")
 generate_info_table(unimodal_funcs, "unimodal_info.csv")

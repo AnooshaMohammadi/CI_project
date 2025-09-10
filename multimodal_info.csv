@@ -1,3 +1,3 @@
-Name,Dimension,Range,Global Min
-ackley,2,"(-32.768, 32.768)",0.0
-zimmerman,2,"(-5.12, 5.12)",0.0
+Name,Dimension,Global Min
+ackley,2,0.0
+zimmerman,2,0.0
