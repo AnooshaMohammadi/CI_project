@@ -90,25 +90,14 @@ def proportional_selection(population, fitness_scores, num_parents, problem_type
     Returns:
     selected parents -- 2D numpy array
     """
-    scores = np.array(fitness_scores, dtype=float)
-
     if problem_type == "min":
-        # Lower raw value = better → invert
-        # Shift so all scores are positive
-        max_val = np.max(scores)
-        adj_scores = max_val - scores + 1e-9
-    elif problem_type == "max":
-        # Higher raw value = better
-        min_val = np.min(scores)
-        adj_scores = scores - min_val + 1e-9
+        # shift so all values are positive
+        adj_fitness = np.max(fitness_scores) - fitness_scores + 1e-8
     else:
-        raise ValueError("problem_type must be 'min' or 'max'")
+        adj_fitness = fitness_scores - np.min(fitness_scores) + 1e-8  # ensure non-negative
 
-    # Normalize to probabilities
-    probabilities = adj_scores / np.sum(adj_scores)
-
-    # Perform roulette wheel sampling
-    selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities, replace=False)
+    probabilities = adj_fitness / np.sum(adj_fitness)
+    selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
     return population[selected_indices]
 
 
@@ -407,7 +396,7 @@ def whole_arithmetic_crossover(parents, a=0.5, crossover_rate=0.75):
     num_parents, chromosome_length = parents.shape
 
     if num_parents % 2 != 0:
-        raise ValueError("Number of parents must be even for pairing.")
+        num_parents = num_parents - 1
 
     children = []
 
@@ -510,54 +499,38 @@ def insert_mutation(population, mutation_rate=0.01):
 ######-Replacement strategy-#######
 #######################################
 
-def plus_strategy(parents, parents_fitness, offspring, offspring_fitness):
+def plus_strategy(parents, parents_fitness, offspring, offspring_fitness, problem_type="min"):
     """
     (μ + λ) Replacement:
     Combine parents and offspring, then select the best μ individuals.
-    Keeps population size same as parents (μ).
-
-    Arguments:
-    parents -- 2D numpy array of current population
-    parents_fitness -- 1D numpy array of fitness scores of parents
-    offspring -- 2D numpy array of offspring
-    offspring_fitness -- 1D numpy array of fitness scores of offspring
-
-    Returns:
-    next_generation -- 2D numpy array of next generation (size = len(parents))
+    Works for both minimization and maximization problems.
     """
-    # Number of individuals to select for next generation
     num = len(parents)
-    # Combine populations
     combined_pop = np.vstack((parents, offspring))
     combined_fitness = np.concatenate((parents_fitness, offspring_fitness))
 
-    # Check shapes
-    assert combined_pop.shape[0] == len(combined_fitness), \
-        "Population and fitness arrays must have the same length"
+    if problem_type == "max":
+        # Higher fitness = better
+        top_indices = np.argsort(combined_fitness)[-num:]
+    elif problem_type == "min":
+        # Lower raw value = better → so take lowest
+        top_indices = np.argsort(combined_fitness)[:num]
+    else:
+        raise ValueError("problem_type must be 'min' or 'max'")
 
-    # Sort indices of combined_fitness in ascending order
-    sorted_indices = np.argsort(combined_fitness)
-
-    # Take top `mu` individuals with highest fitness
-    top_indices = sorted_indices[-num:]
-
-    # Return next generation
     return combined_pop[top_indices]
 
 
-def comma_strategy(offspring, offspring_fitness, num):
+def comma_strategy(offspring, offspring_fitness, num, problem_type="min"):
     """
     (μ, λ) Replacement:
-    Only offspring are considered; select the best μ individuals.
-    Keeps population size same as mu.
-
-    Arguments:
-    offspring -- 2D numpy array of offspring
-    offspring_fitness -- 1D numpy array of fitness scores of offspring
-    mu -- number of individuals to select for next generation (usually original population size)
-
-    Returns:
-    next_generation -- 2D numpy array of next generation (size = mu)
+    Only offspring are considered, select best μ.
     """
-    top_indices = np.argsort(offspring_fitness)[-num:]  # higher fitness is better
+    if problem_type == "max":
+        top_indices = np.argsort(offspring_fitness)[-num:]
+    elif problem_type == "min":
+        top_indices = np.argsort(offspring_fitness)[:num]
+    else:
+        raise ValueError("problem_type must be 'min' or 'max'")
+
     return offspring[top_indices]

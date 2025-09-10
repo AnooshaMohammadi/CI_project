@@ -1,9 +1,8 @@
 from algorithms.genetic_algorithm import *
 from timeit import default_timer as timer
+import numpy as np
 
 start = timer()
-
-import numpy as np
 
 def genetic_algorithm(
     pop_size,
@@ -15,6 +14,7 @@ def genetic_algorithm(
     crossover_func,
     mutation_func,
     replacement_func,
+    problem_type="min",
     mutation_rate=0.01,
     crossover_rate=0.75,
     a=0.5,
@@ -24,14 +24,15 @@ def genetic_algorithm(
     Generic GA framework with stopping condition on total fitness evaluations.
     
     Arguments:
-    pop_size -- population size (mu)
+    pop_size -- population size (num)
     chromosome_length -- number of genes in each individual
     lower_bound, upper_bound -- boundaries for real-valued chromosomes
-    fitness_func -- function to minimize
+    fitness_func -- function to minimize/maximize
     selection_method -- function to select parents
     crossover_func -- function to generate children
     mutation_func -- function to mutate children
     replacement_func -- function to generate next generation
+    problem_type -- "max" for maximization, "min" for minimization
     mutation_rate -- mutation probability
     crossover_rate -- crossover probability
     a -- crossover parameter
@@ -54,7 +55,7 @@ def genetic_algorithm(
 
     while fitness_calls < max_fitness_calls:
         # Select parents
-        parents = selection_method(population, fit, num_parents=int(pop_size/2))
+        parents = selection_method(population, fit, num_parents=int(pop_size / 2))
 
         # Generate offspring
         offspring = crossover_func(parents, a=a, crossover_rate=crossover_rate)
@@ -63,6 +64,8 @@ def genetic_algorithm(
         # Evaluate offspring
         offspring_fit = fitness(offspring, fitness_func)
         fitness_calls += len(offspring)
+
+        print(fitness_calls)
 
         # Replacement to form next generation
         if replacement_func.__name__ == "plus_strategy":
@@ -73,25 +76,36 @@ def genetic_algorithm(
             raise ValueError("Replacement function not recognized")
 
         # Record best fitness
-        best_idx = np.argmax(fitness(population, fitness_func)[1])
-        fitness_history.append(fitness(population, fitness_func)[best_idx])
+        if problem_type == "max":
+            best_idx = np.argmax(fit)
+        else:  # min problem
+            best_idx = np.argmin(fit)
 
-    # Return best solution
-    fit = fitness(population, fitness_func)
-    best_idx = np.argmax(fit)
+        fitness_history.append(fit[best_idx])
+
+        # Update fitness for next iteration
+        fit = fitness(population, fitness_func)
+
+    # Final best solution
+    if problem_type == "max":
+        best_idx = np.argmax(fit)
+    else:  # min problem
+        best_idx = np.argmin(fit)
+
     best_solution = population[best_idx]
     best_fitness = fit[best_idx]
 
     return best_solution, best_fitness, fitness_history
 
 ##############################
+# Example benchmark function
 
 def adjiman(x):
     x1, x2 = x
     return np.cos(x1) * np.sin(x2) - x1 / (x2**2 + 1)
 
 # --- GA Parameters ---
-pop_size = 500
+pop_size = 50
 chromosome_length = 2       # x1 and x2
 lower_bound = np.array([-1, -1])
 upper_bound = np.array([2, 1])
@@ -106,7 +120,7 @@ best_solution, best_fitness, fitness_history = genetic_algorithm(
     selection_method=proportional_selection,  # or tournament_selection, random_selection, etc.
     crossover_func=whole_arithmetic_crossover,  # or simple_crossover, whole_arithmetic_crossover
     mutation_func=complement_mutation,
-    replacement_func=plus_strategy,  # or comma_strategy
+    replacement_func=plus_strategy  # or comma_strategy
 )
 
 print("Best solution:", best_solution)
