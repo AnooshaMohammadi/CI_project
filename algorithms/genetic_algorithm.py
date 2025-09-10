@@ -1,5 +1,5 @@
 import numpy as np
-
+import benchmarkfcns as bf
 
 def initial_binary_population(pop_size, chromosome_length):
     """
@@ -42,7 +42,7 @@ def initial_permutation_population(pop_size, chromosome_length):
     return population
 
 
-def fitness(population, func: callable):
+def fitness(population, func):
     """
     Evaluate a population on a given benchmark function (minimization).
     
@@ -55,7 +55,8 @@ def fitness(population, func: callable):
     fitness_scores -- 1D numpy array of converted scores (higher is better), 
                       used for selection operators
     """
-    fitness_scores = np.array([func(ind) for ind in population])
+    fitness_func = getattr(bf, func)
+    fitness_scores = fitness_func(population)
     
     return fitness_scores
 

@@ -1,9 +1,13 @@
-from algorithms.genetic_algorithm import *
-from timeit import default_timer as timer
 import numpy as np
+import pandas as pd
+import benchmarkfcns as bf
+from algorithms.genetic_algorithm import *
+from algorithms.benchmark import benchmark_functions
+from timeit import default_timer as timer
 
-start = timer()
-
+# =============================
+# GA Function
+# =============================
 def genetic_algorithm(
     pop_size,
     chromosome_length,
@@ -20,45 +24,20 @@ def genetic_algorithm(
     a=0.5,
     max_fitness_calls=400
 ):
-    """
-    Generic GA framework with stopping condition on total fitness evaluations.
-    
-    Arguments:
-    pop_size -- population size (num)
-    chromosome_length -- number of genes in each individual
-    lower_bound, upper_bound -- boundaries for real-valued chromosomes
-    fitness_func -- function to minimize/maximize
-    selection_method -- function to select parents
-    crossover_func -- function to generate children
-    mutation_func -- function to mutate children
-    replacement_func -- function to generate next generation
-    problem_type -- "max" for maximization, "min" for minimization
-    mutation_rate -- mutation probability
-    crossover_rate -- crossover probability
-    a -- crossover parameter
-    max_fitness_calls -- stopping condition based on number of fitness evaluations
-    
-    Returns:
-    best_solution -- best individual found
-    best_fitness -- fitness of the best individual
-    fitness_history -- list of best fitness per generation
-    """
-    
     # Initialize population
     population = initial_real_population(pop_size, chromosome_length, lower_bound, upper_bound)
     fitness_calls = 0
     fitness_history = []
-    print(population)
 
     # Evaluate initial population
     fit = fitness(population, fitness_func)
     fitness_calls += len(population)
 
     while fitness_calls < max_fitness_calls:
-        # Select parents
+        # Selection
         parents = selection_method(population, fit, num_parents=int(pop_size / 2))
 
-        # Generate offspring
+        # Variation
         offspring = crossover_func(parents, a=a, crossover_rate=crossover_rate)
         offspring = mutation_func(offspring, mutation_rate=mutation_rate)
 
@@ -66,7 +45,7 @@ def genetic_algorithm(
         offspring_fit = fitness(offspring, fitness_func)
         fitness_calls += len(offspring)
 
-        # Replacement to form next generation
+        # Replacement
         if replacement_func.__name__ == "plus_strategy":
             population = replacement_func(population, fit, offspring, offspring_fit)
         elif replacement_func.__name__ == "comma_strategy":
@@ -77,54 +56,111 @@ def genetic_algorithm(
         # Record best fitness
         if problem_type == "max":
             best_idx = np.argmax(fit)
-        else:  # min problem
+        else:  # min
             best_idx = np.argmin(fit)
-        print(population[best_idx])
         fitness_history.append(fit[best_idx])
 
-        # Update fitness for next iteration
+        # Update fitness
         fit = fitness(population, fitness_func)
 
     # Final best solution
     if problem_type == "max":
         best_idx = np.argmax(fit)
-    else:  # min problem
+    else:
         best_idx = np.argmin(fit)
 
     best_solution = population[best_idx]
     best_fitness = fit[best_idx]
-    print(fitness_history)
     return best_solution, best_fitness, fitness_history
 
-##############################
-# Example benchmark function
 
-def adjiman(x):
-    x1, x2 = x
-    return (np.cos(x1) * np.sin(x2)) - (x1 / ((x2**2) + 1))
+# =============================
+# Benchmark functions metadata
+# =============================
 
-# --- GA Parameters ---
-pop_size = 50
-chromosome_length = 2       # x1 and x2
-lower_bound = np.array([-1, -1])
-upper_bound = np.array([2, 1])
+# =============================
+# GA runner
+# =============================
+def run_ga_on_function(f, num_runs=20):
+    lower_bound = np.array([f.range[0]] * f.dimension)
+    upper_bound = np.array([f.range[1]] * f.dimension)
+    chromosome_length = f.dimension
 
-# --- Run GA ---
-best_solution, best_fitness, fitness_history = genetic_algorithm(
-    pop_size=pop_size,
-    chromosome_length=chromosome_length,
-    lower_bound=lower_bound,
-    upper_bound=upper_bound,
-    fitness_func=adjiman,
-    selection_method=truncation_selection,  # or tournament_selection, random_selection, etc.
-    crossover_func=simple_crossover,  # or simple_crossover, whole_arithmetic_crossover
-    mutation_func=complement_mutation,
-    replacement_func=plus_strategy  # or comma_strategy
-)
+    results = []
+    for _ in range(num_runs):
+        best_solution, best_fitness, _ = genetic_algorithm(
+            pop_size=50,
+            chromosome_length=chromosome_length,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            fitness_func=f.name,  # pass the actual function object
+            selection_method=truncation_selection,
+            crossover_func=simple_crossover,
+            mutation_func=complement_mutation,
+            replacement_func=plus_strategy,
+            problem_type="min",
+            mutation_rate=0.1,
+            crossover_rate=0.75,
+            a=0.5,
+            max_fitness_calls=400
+        )
+        results.append(best_fitness)
 
-print("Best solution:", best_solution)
-print("Best fitness:", best_fitness)
+    return np.mean(results), np.std(results)
+
+
+# =============================
+# Table generators
+# =============================
+def generate_info_table(func_list, filename):
+    data = []
+    for func in func_list:
+        data.append({
+            "Name": func.name,
+            "Dimension": func.dimension,
+            "Global Min": func.global_minima
+        })
+    df = pd.DataFrame(data)
+    df.to_csv(filename, index=False)
+    return df
+
+
+def generate_results_table(func_list, filename):
+    data = []
+    for idx, f in enumerate(func_list, start=1):
+        print(f.name)  # shows the function being processed
+        avg, std = run_ga_on_function(f)
+        data.append({
+            "No": idx,
+            "Function": f.name,       # changed from f["name"] to f.name
+            "GA Average": avg,
+            "GA Std": std
+        })
+    df = pd.DataFrame(data)
+    df.to_csv(filename, index=False)
+    return df
+
+
+
+# =============================
+# Run everything
+# =============================
+start = timer()
+
+unimodal_funcs = [f for f in benchmark_functions if f.type == "unimodal"]
+multimodal_funcs = [f for f in benchmark_functions if f.type == "multimodal"]
+
+print("Generating unimodal info table...")
+generate_info_table(unimodal_funcs, "unimodal_info.csv")
+
+print("Generating multimodal info table...")
+generate_info_table(multimodal_funcs, "multimodal_info.csv")
+
+print("Running GA on unimodal functions...")
+generate_results_table(unimodal_funcs, "unimodal_results.csv")
+
+print("Running GA on multimodal functions...")
+generate_results_table(multimodal_funcs, "multimodal_results.csv")
 
 end = timer()
-print("---")
-print('Elapsed time:', end - start, 'seconds')
+print(f"All done! Elapsed time: {end - start:.2f} seconds")
