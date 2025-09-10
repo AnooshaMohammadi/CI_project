@@ -160,7 +160,7 @@ def tournament_selection(population, fitness_scores, num_parents, problem_type="
     return np.array(selected_parents)
 
 
-def truncation_selection(population, fitness_scores, num_parents, t):
+def truncation_selection(population, fitness_scores, num_parents, t=75, problem_type="min"):
     """
     Perform truncation selection.
     
@@ -173,12 +173,32 @@ def truncation_selection(population, fitness_scores, num_parents, t):
     Returns:
     selected parents -- 2D numpy array
     """
+    """
+    Perform truncation selection.
+    Works for both maximization and minimization problems.
+
+    Arguments:
+    population -- 2D numpy array
+    fitness_scores -- 1D numpy array
+    num_parents -- number of parents to select
+    t -- top t percent of population to consider (0-100)
+    problem_type -- "max" for maximization, "min" for minimization
+
+    Returns:
+    selected parents -- 2D numpy array
+    """
     if t <= 0 or t > 100:
         raise ValueError("t must be between 0 and 100 (exclusive).")
     
-    sorted_indices = np.argsort(fitness_scores)  # ascending
-    top_t_count = int(np.ceil(len(population) * t / 100))
-    top_t_indices = sorted_indices[-top_t_count:]  # pick top t% based on fitness
+    if problem_type == "max":
+        sorted_indices = np.argsort(fitness_scores)  # ascending
+        top_t_count = int(np.ceil(len(population) * t / 100))
+        top_t_indices = sorted_indices[-top_t_count:]  # pick top t% for max problem
+    else:  # min problem
+        sorted_indices = np.argsort(fitness_scores)  # ascending
+        top_t_count = int(np.ceil(len(population) * t / 100))
+        top_t_indices = sorted_indices[:top_t_count]  # pick top t% for min problem
+
     top_t_population = population[top_t_indices]
     selected_indices = np.random.choice(len(top_t_population), size=num_parents, replace=False)
     return top_t_population[selected_indices]
@@ -319,7 +339,7 @@ def simple_crossover(parents, a=0.5, crossover_rate=0.75):
     num_parents, chromosome_length = parents.shape
 
     if num_parents % 2 != 0:
-        raise ValueError("Number of parents must be even for pairing.")
+        num_parents = num_parents - 1
 
     children = []
 
@@ -368,7 +388,7 @@ def simple_arithmetic_crossover(parents, a=0.5, crossover_rate=0.75):
     num_parents, chromosome_length = parents.shape
 
     if num_parents % 2 != 0:
-        raise ValueError("Number of parents must be even for pairing.")
+        num_parents = num_parents - 1
 
     children = []
 

@@ -15,10 +15,10 @@ def genetic_algorithm(
     mutation_func,
     replacement_func,
     problem_type="min",
-    mutation_rate=0.01,
+    mutation_rate=0.1,
     crossover_rate=0.75,
     a=0.5,
-    max_fitness_calls=40000
+    max_fitness_calls=400
 ):
     """
     Generic GA framework with stopping condition on total fitness evaluations.
@@ -79,7 +79,7 @@ def genetic_algorithm(
             best_idx = np.argmax(fit)
         else:  # min problem
             best_idx = np.argmin(fit)
-
+        print(population[best_idx])
         fitness_history.append(fit[best_idx])
 
         # Update fitness for next iteration
@@ -93,7 +93,7 @@ def genetic_algorithm(
 
     best_solution = population[best_idx]
     best_fitness = fit[best_idx]
-
+    print(fitness_history)
     return best_solution, best_fitness, fitness_history
 
 ##############################
@@ -101,7 +101,7 @@ def genetic_algorithm(
 
 def adjiman(x):
     x1, x2 = x
-    return np.cos(x1) * np.sin(x2) - x1 / (x2**2 + 1)
+    return (np.cos(x1) * np.sin(x2)) - (x1 / ((x2**2) + 1))
 
 # --- GA Parameters ---
 pop_size = 50
@@ -116,8 +116,8 @@ best_solution, best_fitness, fitness_history = genetic_algorithm(
     lower_bound=lower_bound,
     upper_bound=upper_bound,
     fitness_func=adjiman,
-    selection_method=tournament_selection,  # or tournament_selection, random_selection, etc.
-    crossover_func=whole_arithmetic_crossover,  # or simple_crossover, whole_arithmetic_crossover
+    selection_method=truncation_selection,  # or tournament_selection, random_selection, etc.
+    crossover_func=simple_crossover,  # or simple_crossover, whole_arithmetic_crossover
     mutation_func=complement_mutation,
     replacement_func=plus_strategy  # or comma_strategy
 )
