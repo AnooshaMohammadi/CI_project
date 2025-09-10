@@ -49,7 +49,7 @@ def genetic_algorithm(
     fitness_history = []
 
     # Evaluate initial population
-    raw, fit = fitness(population, fitness_func)
+    fit = fitness(population, fitness_func)
     fitness_calls += len(population)
 
     while fitness_calls < max_fitness_calls:
@@ -61,7 +61,7 @@ def genetic_algorithm(
         offspring = mutation_func(offspring, mutation_rate=mutation_rate)
 
         # Evaluate offspring
-        offspring_raw, offspring_fit = fitness(offspring, fitness_func)
+        offspring_fit = fitness(offspring, fitness_func)
         fitness_calls += len(offspring)
 
         # Replacement to form next generation
@@ -74,15 +74,13 @@ def genetic_algorithm(
 
         # Record best fitness
         best_idx = np.argmax(fitness(population, fitness_func)[1])
-        fitness_history.append(fitness(population, fitness_func)[1][best_idx])
+        fitness_history.append(fitness(population, fitness_func)[best_idx])
 
     # Return best solution
-    raw, fit = fitness(population, fitness_func)
+    fit = fitness(population, fitness_func)
     best_idx = np.argmax(fit)
     best_solution = population[best_idx]
-    best_fitness = raw[best_idx]
-    best_fit = fit[best_idx]
-    print(best_fit)
+    best_fitness = fit[best_idx]
 
     return best_solution, best_fitness, fitness_history
 

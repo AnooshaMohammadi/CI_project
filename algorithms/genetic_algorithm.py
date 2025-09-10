@@ -75,21 +75,40 @@ def random_selection(population, num_parents):
     return parents
 
 
-def proportional_selection(population, fitness_scores, num_parents):
+def proportional_selection(population, fitness_scores, num_parents, problem_type="min"):
     """
-    Perform proportional (roulette wheel) selection to choose parents from the population.
+    Perform proportional (roulette wheel) selection.
+    Works for both minimization and maximization problems,
+    even when fitness values are negative.
     
     Arguments:
     population -- 2D numpy array (each row is an individual)
-    fitness_scores -- 1D numpy array (higher is better, from fitness function)
+    fitness_scores -- 1D numpy array (raw objective values)
     num_parents -- number of parents to select
+    problem_type -- "min" or "max"
     
     Returns:
     selected parents -- 2D numpy array
     """
-    total_fitness = np.sum(fitness_scores)
-    probabilities = fitness_scores / total_fitness
-    selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities)
+    scores = np.array(fitness_scores, dtype=float)
+
+    if problem_type == "min":
+        # Lower raw value = better → invert
+        # Shift so all scores are positive
+        max_val = np.max(scores)
+        adj_scores = max_val - scores + 1e-9
+    elif problem_type == "max":
+        # Higher raw value = better
+        min_val = np.min(scores)
+        adj_scores = scores - min_val + 1e-9
+    else:
+        raise ValueError("problem_type must be 'min' or 'max'")
+
+    # Normalize to probabilities
+    probabilities = adj_scores / np.sum(adj_scores)
+
+    # Perform roulette wheel sampling
+    selected_indices = np.random.choice(len(population), size=num_parents, p=probabilities, replace=False)
     return population[selected_indices]
 
 
