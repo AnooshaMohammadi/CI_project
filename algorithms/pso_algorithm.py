@@ -1,34 +1,48 @@
 import numpy as np
 
-def initialize_positions(pop_size, dimension, lower_bound, upper_bound):
-    """
-    Initialize particle positions randomly within bounds.
-    Returns a (pop_size x dimension) numpy array.
-    """
-    positions = np.random.uniform(lower_bound, upper_bound, size=(pop_size, dimension))
-    return np.round(positions, 2)
+def initialize_pbest(positions, fitness_values):
+    """Initialize personal best positions and fitness."""
+    pbest_positions = positions.copy()
+    pbest_fitness = fitness_values.copy()
+    return pbest_positions, pbest_fitness
 
-def initialize_velocities(pop_size, dimension, velocity_bound):
-    """
-    Initialize particle velocities randomly within [-velocity_bound, velocity_bound].
-    Returns a (pop_size x dimension) numpy array.
-    """
-    velocities = np.random.uniform(-velocity_bound, velocity_bound, size=(pop_size, dimension))
-    return np.round(velocities, 2)
+def initialize_gbest(pbest_positions, pbest_fitness, problem_type="min"):
+    """Initialize global best from personal bests."""
+    if problem_type == "min":
+        best_idx = np.argmin(pbest_fitness)
+    else:
+        best_idx = np.argmax(pbest_fitness)
+    return pbest_positions[best_idx], pbest_fitness[best_idx]
 
-def fitness(population, func: callable):
-    """
-    Evaluate a population on a given benchmark function (minimization).
-    
-    Arguments:
-    population -- 2D numpy array (each row is an individual solution)
-    func       -- callable benchmark function that accepts a 1D array (individual)
-    
-    Returns:
-    raw_values     -- 1D numpy array of raw function values (lower is better)
-    fitness_scores -- 1D numpy array of converted scores (higher is better), 
-                      used for selection operators
-    """
-    fitness_scores = np.array([func(ind) for ind in population])
-    
-    return fitness_scores
+def update_velocity(velocities, positions, pbest_positions, gbest_position, w, c1, c2):
+    """Update velocity of particles."""
+    r1, r2 = np.random.rand(*positions.shape), np.random.rand(*positions.shape)
+    cognitive = c1 * r1 * (pbest_positions - positions)
+    social = c2 * r2 * (gbest_position - positions)
+    return w * velocities + cognitive + social
+
+def update_position(positions, velocities, lower_bound, upper_bound):
+    """Update positions and keep them within bounds."""
+    positions += velocities
+    return np.clip(positions, lower_bound, upper_bound)
+
+def update_pbest(positions, fitness_values, pbest_positions, pbest_fitness, problem_type="min"):
+    """Update personal best if current fitness is better."""
+    for i in range(len(positions)):
+        if (problem_type == "min" and fitness_values[i] < pbest_fitness[i]) or \
+           (problem_type == "max" and fitness_values[i] > pbest_fitness[i]):
+            pbest_positions[i] = positions[i].copy()
+            pbest_fitness[i] = fitness_values[i]
+    return pbest_positions, pbest_fitness
+
+def update_gbest(pbest_positions, pbest_fitness, gbest_position, gbest_fitness, problem_type="min"):
+    """Update global best based on personal bests."""
+    if problem_type == "min":
+        best_idx = np.argmin(pbest_fitness)
+        if pbest_fitness[best_idx] < gbest_fitness:
+            return pbest_positions[best_idx], pbest_fitness[best_idx]
+    else:
+        best_idx = np.argmax(pbest_fitness)
+        if pbest_fitness[best_idx] > gbest_fitness:
+            return pbest_positions[best_idx], pbest_fitness[best_idx]
+    return gbest_position, gbest_fitness
