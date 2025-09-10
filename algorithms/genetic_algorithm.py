@@ -221,7 +221,7 @@ def one_point_crossover(parents, crossover_rate=0.75):
     num_parents, chromosome_length = parents.shape
 
     if num_parents % 2 != 0:
-        raise ValueError("Number of parents must be even for pairing.")
+        num_parents = num_parents - 1
 
     children = []
 
