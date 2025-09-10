@@ -55,11 +55,9 @@ def fitness(population, func: callable):
     fitness_scores -- 1D numpy array of converted scores (higher is better), 
                       used for selection operators
     """
-    raw_values = np.array([func(ind) for ind in population])
+    fitness_scores = np.array([func(ind) for ind in population])
     
-    fitness_scores = np.max(raw_values) - raw_values + 1e-6
-    
-    return raw_values, fitness_scores
+    return fitness_scores
 
 
 def random_selection(population, num_parents):
