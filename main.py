@@ -119,15 +119,17 @@ def pso(
     gbest_position, gbest_fitness = initialize_gbest(pbest_positions, pbest_fitness, problem_type)
     
     fitness_history = []
+    fitness_calls = 0
+    fitness_calls += len(positions)
 
-    for _ in range(max_fitness_calls):
+    while fitness_calls < max_fitness_calls:
         # Update velocities and positions
         velocities = update_velocity(velocities, positions, pbest_positions, gbest_position, w, c1, c2)
         positions = update_position(positions, velocities, lower_bound, upper_bound)
 
         # Evaluate new fitness
         fitness_values = fitness(positions, fitness_func)
-
+        fitness_calls += len(positions)
         # Update pbest and gbest
         pbest_positions, pbest_fitness = update_pbest(positions, fitness_values, pbest_positions, pbest_fitness, problem_type)
         gbest_position, gbest_fitness = update_gbest(pbest_positions, pbest_fitness, gbest_position, gbest_fitness, problem_type)
@@ -216,8 +218,9 @@ def run_pso_on_function(f, num_runs=20):
 # =============================
 def generate_info_table(func_list, filename):
     data = []
-    for func in func_list:
+    for idx, func in enumerate(func_list, start=1):
         data.append({
+            "Fn": f"F{idx}",
             "Name": func.name,
             "Dimension": func.dimension,
             "Global Min": func.global_minima
@@ -225,7 +228,6 @@ def generate_info_table(func_list, filename):
     df = pd.DataFrame(data)
     df.to_csv(filename, index=False)
     return df
-
 
 
 def generate_results_table(func_list, filename):
@@ -263,10 +265,16 @@ def generate_results_table(func_list, filename):
             "PSO": pso_avg
         })
         results.append({
-            "Fn": f"F{idx}",
+            "Fn": f" ",
             "Stats": "Std",
             "GA": ga_std,
             "PSO": pso_std
+        })
+        results.append({
+            "Fn": f" ",
+            "Stats": "Rank",
+            "GA": None,  # Placeholder for GA rank
+            "PSO": None  # Placeholder for PSO rank
         })
 
     # Phase 2: Compute ranks
@@ -274,20 +282,17 @@ def generate_results_table(func_list, filename):
     ga_ranks = [np.argsort(ga_avgs).tolist().index(i) + 1 for i in range(len(ga_avgs))]
     pso_ranks = [np.argsort(pso_avgs).tolist().index(i) + 1 for i in range(len(pso_avgs))]
 
-    # Add rank rows
+    # Fill in ranks
+    rank_idx = 2  # Start at the third entry (index 2) for each function
     for idx in range(len(func_list)):
-        results.append({
-            "Fn": f"F{idx+1}",
-            "Stats": "Rank",
-            "GA": ga_ranks[idx],
-            "PSO": pso_ranks[idx]
-        })
+        results[rank_idx]["GA"] = ga_ranks[idx]
+        results[rank_idx]["PSO"] = pso_ranks[idx]
+        rank_idx += 3  # Move to the next function's rank entry
 
     # Create DataFrame
     df = pd.DataFrame(results)
     df.to_csv(filename, index=False)
     return df
-
 
 
 # =============================
@@ -297,8 +302,7 @@ start = timer()
 
 unimodal_funcs = [f for f in benchmark_functions if f.type == "unimodal"]
 multimodal_funcs = [f for f in benchmark_functions if f.type == "multimodal"]
-list = [f.name for f in multimodal_funcs]
-print(list)
+multi = multimodal_funcs[:2]
 
 print("Generating unimodal info table...")
 generate_info_table(unimodal_funcs, "unimodal_info.csv")
@@ -307,10 +311,10 @@ print("Generating multimodal info table...")
 generate_info_table(multimodal_funcs, "multimodal_info.csv")
 
 print("Running algorithms on unimodal functions...")
-generate_results_table(unimodal_funcs, "unimodal_results.csv")
+#generate_results_table(unimodal_funcs, "unimodal_results.csv")
 
 print("Running algorithms on multimodal functions...")
-generate_results_table(multimodal_funcs, "multimodal_results.csv")
+generate_results_table(multi, "multimodal_results.csv")
 
 end = timer()
 print(f"All done! Elapsed time: {end - start:.2f} seconds")
