@@ -94,19 +94,19 @@ def run_ga_on_function(f, num_runs=20):
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             fitness_func=f.name,  # pass the actual function object
-            selection_method=truncation_selection,
-            crossover_func=simple_crossover,
+            selection_method=rank_based_selection,
+            crossover_func=simple_arithmetic_crossover,
             mutation_func=complement_mutation,
             replacement_func=plus_strategy,
             problem_type="min",
-            mutation_rate=0.1,
+            mutation_rate=0.01,
             crossover_rate=0.75,
             a=0.5,
-            max_fitness_calls=400
+            max_fitness_calls=40000
         )
         results.append(best_fitness)
-
-    return np.mean(results), np.std(results)
+    print(results)
+    return np.mean(results), np.std(results), np.min(results)
 
 
 # =============================
@@ -129,12 +129,13 @@ def generate_results_table(func_list, filename):
     data = []
     for idx, f in enumerate(func_list, start=1):
         print(f.name)  # shows the function being processed
-        avg, std = run_ga_on_function(f)
+        avg, std, best = run_ga_on_function(f)
         data.append({
             "No": idx,
             "Function": f.name,       # changed from f["name"] to f.name
             "GA Average": avg,
-            "GA Std": std
+            "GA Std": std,
+            "GA best fitness": best
         })
     df = pd.DataFrame(data)
     df.to_csv(filename, index=False)
@@ -149,6 +150,8 @@ start = timer()
 
 unimodal_funcs = [f for f in benchmark_functions if f.type == "unimodal"]
 multimodal_funcs = [f for f in benchmark_functions if f.type == "multimodal"]
+list = [f.name for f in multimodal_funcs]
+print(list)
 
 print("Generating unimodal info table...")
 generate_info_table(unimodal_funcs, "unimodal_info.csv")
