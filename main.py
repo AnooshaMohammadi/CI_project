@@ -2,13 +2,14 @@ import numpy as np
 import pandas as pd
 import benchmarkfcns as bf
 from algorithms.genetic_algorithm import *
+from algorithms.pso_algorithm import *
 from algorithms.benchmark import benchmark_functions
 from timeit import default_timer as timer
 
 # =============================
 # GA Function
 # =============================
-def genetic_algorithm(
+def genetic(
     pop_size,
     chromosome_length,
     lower_bound,
@@ -74,6 +75,68 @@ def genetic_algorithm(
     return best_solution, best_fitness, fitness_history
 
 
+def pso(
+    pop_size,
+    dim,
+    lower_bound,
+    upper_bound,
+    velocity_lower_bound,
+    velocity_upper_bound,
+    fitness_func,
+    w=0.74,
+    c1=1.42,
+    c2=1.42,
+    problem_type="min",
+    max_fitness_calls=400
+):
+    """
+    Generic PSO framework with stopping condition on total fitness evaluations.
+    
+    Arguments:
+    pop_size -- number of particles
+    dim -- dimensionality of search space
+    lower_bound, upper_bound -- search space boundaries
+    fitness_func -- objective function to minimize/maximize
+    w -- inertia weight
+    c1, c2 -- cognitive and social coefficients
+    problem_type -- "max" for maximization, "min" for minimization
+    max_fitness_calls -- stopping condition based on number of fitness evaluations
+    
+    Returns:
+    best_solution -- best particle found
+    best_fitness -- fitness of the best particle
+    fitness_history -- list of best fitness per iteration
+    """
+    # --- Initialization ---
+    positions = initial_real_population(pop_size, dim, lower_bound, upper_bound)
+    velocities = initial_real_population(pop_size, dim, velocity_lower_bound, velocity_upper_bound)
+    #print("positions:",positions)
+    #print("velocities",velocities)
+
+    fitness_values = fitness(positions, fitness_func)
+    
+    pbest_positions, pbest_fitness = initialize_pbest(positions, fitness_values)
+    gbest_position, gbest_fitness = initialize_gbest(pbest_positions, pbest_fitness, problem_type)
+    
+    fitness_history = []
+
+    for _ in range(max_fitness_calls):
+        # Update velocities and positions
+        velocities = update_velocity(velocities, positions, pbest_positions, gbest_position, w, c1, c2)
+        positions = update_position(positions, velocities, lower_bound, upper_bound)
+
+        # Evaluate new fitness
+        fitness_values = fitness(positions, fitness_func)
+
+        # Update pbest and gbest
+        pbest_positions, pbest_fitness = update_pbest(positions, fitness_values, pbest_positions, pbest_fitness, problem_type)
+        gbest_position, gbest_fitness = update_gbest(pbest_positions, pbest_fitness, gbest_position, gbest_fitness, problem_type)
+
+        fitness_history.append(gbest_fitness)
+
+    return gbest_position, gbest_fitness, fitness_history
+
+
 # =============================
 # Benchmark functions metadata
 # =============================
@@ -88,7 +151,7 @@ def run_ga_on_function(f, num_runs=20):
 
     results = []
     for _ in range(num_runs):
-        best_solution, best_fitness, _ = genetic_algorithm(
+        best_solution, best_fitness, _ = genetic(
             pop_size=50,
             chromosome_length=chromosome_length,
             lower_bound=lower_bound,
@@ -105,8 +168,47 @@ def run_ga_on_function(f, num_runs=20):
             max_fitness_calls=40000
         )
         results.append(best_fitness)
-    print(results)
+    
     return np.mean(results), np.std(results), np.min(results)
+
+
+def run_pso_on_function(f, num_runs=20):
+    """
+    Run PSO on a given function multiple times and return statistics.
+    
+    Arguments:
+    f -- function object representing the benchmark function
+    num_runs -- number of times to run PSO
+    
+    Returns:
+    avg_fitness -- average best fitness across all runs
+    std_fitness -- standard deviation of best fitness across all runs
+    best_fitness -- best best fitness across all runs
+    """
+    lower_bound = np.array([f.range[0]] * f.dimension)
+    upper_bound = np.array([f.range[1]] * f.dimension)
+    dim = f.dimension
+
+    results = []
+    for _ in range(num_runs):
+        best_position, best_fitness, _ = pso(
+            pop_size=50,
+            dim=dim,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            velocity_lower_bound=-1,
+            velocity_upper_bound=1,
+            fitness_func=f.name,
+            problem_type="min",
+            max_fitness_calls=40000
+        )
+        results.append(best_fitness)
+    
+    avg_fitness = np.mean(results)
+    std_fitness = np.std(results)
+    best_fitness = np.min(results)
+    
+    return avg_fitness, std_fitness, best_fitness
 
 
 # =============================
@@ -125,19 +227,64 @@ def generate_info_table(func_list, filename):
     return df
 
 
+
 def generate_results_table(func_list, filename):
-    data = []
+    # Phase 1: Collect all results
+    ga_avgs = []
+    ga_stds = []
+    pso_avgs = []
+    pso_stds = []
+
+    # First pass: collect data without ranks
+    results = []
+
     for idx, f in enumerate(func_list, start=1):
-        print(f.name)  # shows the function being processed
-        avg, std, best = run_ga_on_function(f)
-        data.append({
-            "No": idx,
-            "Function": f.name,       # changed from f["name"] to f.name
-            "GA Average": avg,
-            "GA Std": std,
-            "GA best fitness": best
+        fn_name = f.name
+        print(f"Processing {fn_name}")
+
+        # Run GA
+        print("Running GA...")
+        ga_avg, ga_std, _ = run_ga_on_function(f)
+        ga_avgs.append(ga_avg)
+        ga_stds.append(ga_std)
+
+        # Run PSO
+        print("Running PSO...")
+        pso_avg, pso_std, _ = run_pso_on_function(f)
+        pso_avgs.append(pso_avg)
+        pso_stds.append(pso_std)
+        print("Done!")
+
+        # Store raw data
+        results.append({
+            "Fn": f"F{idx}",
+            "Stats": "Avg",
+            "GA": ga_avg,
+            "PSO": pso_avg
         })
-    df = pd.DataFrame(data)
+        results.append({
+            "Fn": f"F{idx}",
+            "Stats": "Std",
+            "GA": ga_std,
+            "PSO": pso_std
+        })
+
+    # Phase 2: Compute ranks
+    # Lower value = better → rank based on ascending order
+    ga_ranks = [np.argsort(ga_avgs).tolist().index(i) + 1 for i in range(len(ga_avgs))]
+    pso_ranks = [np.argsort(pso_avgs).tolist().index(i) + 1 for i in range(len(pso_avgs))]
+
+    # Add rank rows
+    for idx in range(len(func_list)):
+        results.append({
+            "Fn": f"F{idx+1}",
+            "Stats": "Rank",
+            "GA": ga_ranks[idx],
+            "PSO": pso_ranks[idx]
+        })
+
+    # Create DataFrame
+    df = pd.DataFrame(results)
     df.to_csv(filename, index=False)
     return df
 
@@ -159,10 +306,10 @@ generate_info_table(unimodal_funcs, "unimodal_info.csv")
 print("Generating multimodal info table...")
 generate_info_table(multimodal_funcs, "multimodal_info.csv")
 
-print("Running GA on unimodal functions...")
+print("Running algorithms on unimodal functions...")
 generate_results_table(unimodal_funcs, "unimodal_results.csv")
 
-print("Running GA on multimodal functions...")
+print("Running algorithms on multimodal functions...")
 generate_results_table(multimodal_funcs, "multimodal_results.csv")
 
 end = timer()
