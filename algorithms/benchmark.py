@@ -1,11 +1,12 @@
 # benchmark.py
 from dataclasses import dataclass
 from typing import Tuple, Union
+import math
 
 @dataclass
 class BenchmarkFunction:
     name: str
-    range: Tuple[Union[float, str], Union[float, str]]
+    range: Tuple[float, float]
     dimension: int
     global_minima: Union[float, str]  # can be float or string
     type: str  # "unimodal" or "multimodal"
@@ -20,7 +21,7 @@ benchmark_functions = [
     BenchmarkFunction("alpinen2", (0, 10), 30, "2.83082553*10^13", "multimodal"),
     BenchmarkFunction("bartelsconn", (-500, 500), 2, 1, "multimodal"),
     BenchmarkFunction("beale", (-4.5, 4.5), 2, 0, "multimodal"),
-    BenchmarkFunction("bird", (-6.28,6.28), 2, -106.764537, "multimodal"),
+    BenchmarkFunction("bird", (-2 * math.pi, 2 * math.pi), 2, -106.764537, "multimodal"),
     BenchmarkFunction("bohachevskyn1", (-100, 100), 2, 0, "unimodal"),
     BenchmarkFunction("bohachevskyn2", (-100, 100), 2, 0, "multimodal"),
     BenchmarkFunction("booth", (-10, 10), 2, 0, "unimodal"),
@@ -74,8 +75,8 @@ benchmark_functions = [
     BenchmarkFunction("trid", (-900, 900), 30, -4930, "unimodal"),
     BenchmarkFunction("wolfe", (0, 2), 3, 0, "multimodal"),
     BenchmarkFunction("xinsheyangn1", (-5, 5), 30, 0, "multimodal"),
-    BenchmarkFunction("xinsheyangn2", (-6.28,6.28), 30, 0, "multimodal"),
-    BenchmarkFunction("xinsheyangn3", (-6.28,6.28), 30, -1, "unimodal"),
+    BenchmarkFunction("xinsheyangn2", (-2 * math.pi, 2 * math.pi), 30, 0, "multimodal"),
+    BenchmarkFunction("xinsheyangn3", (-2 * math.pi, 2 * math.pi), 30, -1, "unimodal"),
     BenchmarkFunction("xinsheyangn4", (-10, 10), 30, -1, "multimodal"),
     BenchmarkFunction("zakharov", (-5, 10), 30, 0, "unimodal")
 ]

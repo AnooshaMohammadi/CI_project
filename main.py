@@ -159,7 +159,7 @@ def run_ga_on_function(f, num_runs=20):
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             fitness_func=f.name,  # pass the actual function object
-            selection_method=rank_based_selection,
+            selection_method=proportional_selection,
             crossover_func=simple_arithmetic_crossover,
             mutation_func=complement_mutation,
             replacement_func=plus_strategy,
@@ -222,6 +222,7 @@ def generate_info_table(func_list, filename):
         data.append({
             "Fn": f"F{idx}",
             "Name": func.name,
+            "Range": func.range,
             "Dimension": func.dimension,
             "Global Min": func.global_minima
         })
@@ -256,7 +257,6 @@ def generate_results_table(func_list, filename):
         pso_avgs.append(pso_avg)
         pso_stds.append(pso_std)
         print("Done!")
-
         # Store raw data
         results.append({
             "Fn": f"F{idx}",
@@ -277,10 +277,31 @@ def generate_results_table(func_list, filename):
             "PSO": None  # Placeholder for PSO rank
         })
 
-    # Phase 2: Compute ranks
-    # Lower value = better → rank based on ascending order
-    ga_ranks = [np.argsort(ga_avgs).tolist().index(i) + 1 for i in range(len(ga_avgs))]
-    pso_ranks = [np.argsort(pso_avgs).tolist().index(i) + 1 for i in range(len(pso_avgs))]
+    # Phase 2: Compute ranks based on proximity to global_minima
+    ga_ranks = []
+    pso_ranks = []
+
+    for idx, f in enumerate(func_list):
+        # Convert global_minima to float if necessary
+        try:
+            global_minima = float(f.global_minima)
+        except ValueError:
+            # Handle scientific notation or other formats
+            global_minima = float(eval(f.global_minima))
+        
+        ga_diff = abs(ga_avgs[idx] - global_minima)
+        pso_diff = abs(pso_avgs[idx] - global_minima)
+
+        # Combine differences and sort
+        combined_diffs = [(ga_diff, "GA"), (pso_diff, "PSO")]
+        sorted_diffs = sorted(combined_diffs, key=lambda x: x[0])
+
+        # Assign ranks based on sorted differences
+        ga_rank = sorted_diffs.index((ga_diff, "GA")) + 1
+        pso_rank = sorted_diffs.index((pso_diff, "PSO")) + 1
+
+        ga_ranks.append(ga_rank)
+        pso_ranks.append(pso_rank)
 
     # Fill in ranks
     rank_idx = 2  # Start at the third entry (index 2) for each function
@@ -302,7 +323,7 @@ start = timer()
 
 unimodal_funcs = [f for f in benchmark_functions if f.type == "unimodal"]
 multimodal_funcs = [f for f in benchmark_functions if f.type == "multimodal"]
-multi = multimodal_funcs[:2]
+#multi = multimodal_funcs[-2:]
 
 print("Generating unimodal info table...")
 generate_info_table(unimodal_funcs, "unimodal_info.csv")
@@ -311,10 +332,10 @@ print("Generating multimodal info table...")
 generate_info_table(multimodal_funcs, "multimodal_info.csv")
 
 print("Running algorithms on unimodal functions...")
-#generate_results_table(unimodal_funcs, "unimodal_results.csv")
+generate_results_table(unimodal_funcs, "unimodal_results.csv")
 
 print("Running algorithms on multimodal functions...")
-generate_results_table(multi, "multimodal_results.csv")
+generate_results_table(multimodal_funcs, "multimodal_results.csv")
 
 end = timer()
 print(f"All done! Elapsed time: {end - start:.2f} seconds")
