@@ -757,3 +757,84 @@ def comma_strategy(offspring, offspring_fitness, num, problem_type="min"):
         raise ValueError("problem_type must be 'min' or 'max'")
 
     return offspring[top_indices]
+
+#######################################
+######-Steady State Replacement-#######
+#######################################
+
+def steady_state_replacement(parents, parents_fitness, offspring, offspring_fitness, 
+                             method="random", problem_type="min"):
+    """
+    Steady-State Replacement:
+    Replace one or few parents with offspring depending on strategy.
+
+    Methods:
+        - "random"     : Replace a random parent with a random offspring
+        - "worst"      : Replace the worst parent with the best offspring
+        - "tournament" : Randomly select subset of parents and offspring,
+                         replace worst with best
+        - "oldest"     : Replace the oldest parent (index-based) with best offspring
+        - "conservative": Replace only if offspring better than parent
+    """
+    num = len(parents)
+    new_pop = parents.copy()
+    new_fit = parents_fitness.copy()
+
+    def better(f1, f2):
+        return f1 < f2 if problem_type == "min" else f1 > f2
+
+    if method == "random":
+        p_idx = np.random.randint(num)
+        o_idx = np.random.randint(len(offspring))
+        new_pop[p_idx] = offspring[o_idx]
+        new_fit[p_idx] = offspring_fitness[o_idx]
+
+    elif method == "worst":
+        p_idx = np.argmax(parents_fitness) if problem_type=="min" else np.argmin(parents_fitness)
+        o_idx = np.argmin(offspring_fitness) if problem_type=="min" else np.argmax(offspring_fitness)
+        new_pop[p_idx] = offspring[o_idx]
+        new_fit[p_idx] = offspring_fitness[o_idx]
+
+    elif method == "tournament":
+     # Pick a random subset size between 2 and num parents
+     subset_size = np.random.randint(2, num + 1)
+     p_candidates = np.random.choice(num, subset_size, replace=False)
+
+     # Pick worst parent in this random subset
+     if problem_type == "min":
+         p_worst = p_candidates[np.argmax(parents_fitness[p_candidates])]
+     else:
+         p_worst = p_candidates[np.argmin(parents_fitness[p_candidates])]
+
+     # Pick a random offspring (not necessarily best)
+     o_idx = np.random.randint(len(offspring))
+
+     # Replace worst parent with this offspring
+     new_pop[p_worst] = offspring[o_idx]
+     new_fit[p_worst] = offspring_fitness[o_idx]
+
+    elif method == "oldest":
+     # Replace the oldest parent (index 0) with a random offspring
+     o_idx = np.random.randint(len(offspring))
+     new_pop[0] = offspring[o_idx]
+     new_fit[0] = offspring_fitness[o_idx]
+
+    elif method == "conservative":
+     # Select oldest parent and a random parent
+     oldest_idx = 0
+     random_idx = np.random.randint(num)
+     candidates = [oldest_idx, random_idx]
+
+     # Pick the worst among them
+     if problem_type == "min":
+         p_idx = max(candidates, key=lambda i: parents_fitness[i])
+     else:
+         p_idx = min(candidates, key=lambda i: parents_fitness[i])
+
+     # Replace with a random offspring
+     o_idx = np.random.randint(len(offspring))
+     new_pop[p_idx] = offspring[o_idx]
+     new_fit[p_idx] = offspring_fitness[o_idx]
+
+    return np.array(new_pop), np.array(new_fit)
+
