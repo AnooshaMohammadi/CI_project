@@ -258,6 +258,7 @@ def generate_results_table(func_list, filename):
         pso_avgs.append(pso_avg)
         pso_stds.append(pso_std)
         print("Done!")
+
         # Store raw data
         results.append({
             "Fn": f"F{idx}",
@@ -279,29 +280,33 @@ def generate_results_table(func_list, filename):
         })
 
     # Phase 2: Compute ranks based on proximity to global_minima
-    ga_ranks = []
-    pso_ranks = []
-
+    # Compute GA ranks
+    ga_diffs = []
     for idx, f in enumerate(func_list):
         try:
-            global_minima = f.global_minima
+            global_minima = float(f.global_minima)
         except ValueError:
             # Handle scientific notation or other formats
-            global_minima = float(eval(f.global_minima))
+            global_minima = float(eval(f.global_minima.replace('^', '**')))
         
         ga_diff = abs(ga_avgs[idx] - global_minima)
+        ga_diffs.append(ga_diff)
+    
+    ga_ranks = [np.argsort(ga_diffs).tolist().index(i) + 1 for i in range(len(ga_diffs))]
+
+    # Compute PSO ranks
+    pso_diffs = []
+    for idx, f in enumerate(func_list):
+        try:
+            global_minima = float(f.global_minima)
+        except ValueError:
+            # Handle scientific notation or other formats
+            global_minima = float(eval(f.global_minima.replace('^', '**')))
+        
         pso_diff = abs(pso_avgs[idx] - global_minima)
-
-        # Combine differences and sort
-        combined_diffs = [(ga_diff, "GA"), (pso_diff, "PSO")]
-        sorted_diffs = sorted(combined_diffs, key=lambda x: x[0])
-
-        # Assign ranks based on sorted differences
-        ga_rank = sorted_diffs.index((ga_diff, "GA")) + 1
-        pso_rank = sorted_diffs.index((pso_diff, "PSO")) + 1
-
-        ga_ranks.append(ga_rank)
-        pso_ranks.append(pso_rank)
+        pso_diffs.append(pso_diff)
+    
+    pso_ranks = [np.argsort(pso_diffs).tolist().index(i) + 1 for i in range(len(pso_diffs))]
 
     # Fill in ranks
     rank_idx = 2  # Start at the third entry (index 2) for each function
@@ -315,7 +320,6 @@ def generate_results_table(func_list, filename):
     df.to_csv(filename, index=False)
     return df
 
-
 # =============================
 # Run everything
 # =============================
@@ -323,19 +327,19 @@ start = timer()
 
 unimodal_funcs = [f for f in benchmark_functions if f.type == "unimodal"]
 multimodal_funcs = [f for f in benchmark_functions if f.type == "multimodal"]
-#multi = multimodal_funcs[-2:]
+#multi = multimodal_funcs[-4:]
 
 print("Generating unimodal info table...")
-generate_info_table(unimodal_funcs, "unimodal_info.csv")
+generate_info_table(unimodal_funcs, "results/unimodal_info.csv")
 
 print("Generating multimodal info table...")
-generate_info_table(multimodal_funcs, "multimodal_info.csv")
+generate_info_table(multimodal_funcs, "results/multimodal_info.csv")
 
 print("Running algorithms on unimodal functions...")
-generate_results_table(unimodal_funcs, "unimodal_results.csv")
+generate_results_table(unimodal_funcs, "results/unimodal_results.csv")
 
 print("Running algorithms on multimodal functions...")
-generate_results_table(multimodal_funcs, "multimodal_results.csv")
+generate_results_table(multimodal_funcs, "results/multimodal_results.csv")
 
 end = timer()
 print(f"All done! Elapsed time: {end - start:.2f} seconds")
