@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import benchmarkfcns as bf
+from algorithms.utility import *
 from algorithms.genetic_algorithm import *
 from algorithms.pso_algorithm import *
 from algorithms.benchmark import benchmark_functions
@@ -282,9 +283,8 @@ def generate_results_table(func_list, filename):
     pso_ranks = []
 
     for idx, f in enumerate(func_list):
-        # Convert global_minima to float if necessary
         try:
-            global_minima = float(f.global_minima)
+            global_minima = f.global_minima
         except ValueError:
             # Handle scientific notation or other formats
             global_minima = float(eval(f.global_minima))

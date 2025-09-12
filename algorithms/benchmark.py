@@ -8,7 +8,7 @@ class BenchmarkFunction:
     name: str
     range: Tuple[float, float]
     dimension: int
-    global_minima: Union[float, str]  # can be float or string
+    global_minima: float  # can be float or string
     type: str  # "unimodal" or "multimodal"
 
 benchmark_functions = [
@@ -18,14 +18,14 @@ benchmark_functions = [
     BenchmarkFunction("ackleyn4", (-35, 35), 30, -4.590101633799122, "multimodal"),
     BenchmarkFunction("adjiman", (-1, 2), 2, -2.02181, "multimodal"),
     BenchmarkFunction("alpinen1", (0, 10), 30, 0, "multimodal"),
-    BenchmarkFunction("alpinen2", (0, 10), 30, "2.83082553*10^13", "multimodal"),
+    BenchmarkFunction("alpinen2", (0, 10), 30, 2.83082553 * 10**13, "multimodal"),
     BenchmarkFunction("bartelsconn", (-500, 500), 2, 1, "multimodal"),
     BenchmarkFunction("beale", (-4.5, 4.5), 2, 0, "multimodal"),
     BenchmarkFunction("bird", (-2 * math.pi, 2 * math.pi), 2, -106.764537, "multimodal"),
     BenchmarkFunction("bohachevskyn1", (-100, 100), 2, 0, "unimodal"),
     BenchmarkFunction("bohachevskyn2", (-100, 100), 2, 0, "multimodal"),
     BenchmarkFunction("booth", (-10, 10), 2, 0, "unimodal"),
-    BenchmarkFunction("brent", (-20, 0), 2, "e^-200", "unimodal"),
+    BenchmarkFunction("brent", (-20, 0), 2, math.exp(-200), "unimodal"),
     BenchmarkFunction("brown", (-1, 4), 30, 0, "unimodal"),
     BenchmarkFunction("bukinn6", (-13, 3), 2, 0, "multimodal"),
     BenchmarkFunction("carromtable", (-10, 10), 2, -24.15681551650653, "multimodal"),
@@ -38,7 +38,7 @@ benchmark_functions = [
     BenchmarkFunction("exponential", (-1, 1), 2, -1, "unimodal"),
     BenchmarkFunction("forrester", (-0.5, 2.5), 1, 6.0207, "multimodal"),
     BenchmarkFunction("goldsteinprice", (-2, 2), 2, 3, "multimodal"),
-    BenchmarkFunction("gramacylee", (-0.5, 2.5), 1, -0.869011134989500, "multimodal"),
+    BenchmarkFunction("gramacylee", (0.5, 2.5), 1, -0.869011134989500, "multimodal"),
     BenchmarkFunction("griewank", (-600, 600), 30, 0, "unimodal"),
     BenchmarkFunction("happycat", (-2, 2), 2, 30, "multimodal"),
     BenchmarkFunction("himmelblau", (-6, 6), 2, 0, "multimodal"),

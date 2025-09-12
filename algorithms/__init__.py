@@ -1,11 +1,4 @@
 from .genetic_algorithm import (
-    # Initial population
-    initial_binary_population,
-    initial_real_population,
-    initial_permutation_population,
-
-    # Fitness
-    fitness,
 
     # Selection methods
     random_selection,
