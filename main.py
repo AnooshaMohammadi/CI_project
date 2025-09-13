@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import benchmarkfcns as bf
+#import benchmarkfcns as bf
 from algorithms.utility import *
 from algorithms.genetic_algorithm import *
 from algorithms.pso_algorithm import *
