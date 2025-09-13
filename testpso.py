@@ -1,11 +1,10 @@
-from algorithms.genetic_algorithm import initial_real_population, fitness
+from algorithms.utility import *
+from algorithms.genetic_algorithm import *
 from algorithms.pso_algorithm import *
 from timeit import default_timer as timer
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-
-start = timer()
 
 def pso(
     pop_size,
@@ -19,7 +18,7 @@ def pso(
     c1=1.42,
     c2=1.42,
     problem_type="min",
-    max_fitness_calls=400
+    max_fitness_calls=40000
 ):
     """
     Generic PSO framework with stopping condition on total fitness evaluations.
@@ -42,8 +41,8 @@ def pso(
     # --- Initialization ---
     positions = initial_real_population(pop_size, dim, lower_bound, upper_bound)
     velocities = initial_real_population(pop_size, dim, velocity_lower_bound, velocity_upper_bound)
-    print("positions:",positions)
-    print("velocities",velocities)
+    #print("positions:",positions)
+    #print("velocities",velocities)
 
     fitness_values = fitness(positions, fitness_func)
     
@@ -51,15 +50,17 @@ def pso(
     gbest_position, gbest_fitness = initialize_gbest(pbest_positions, pbest_fitness, problem_type)
     
     fitness_history = []
+    fitness_calls = 0
+    fitness_calls += len(positions)
 
-    for _ in range(max_fitness_calls):
+    while fitness_calls < max_fitness_calls:
         # Update velocities and positions
         velocities = update_velocity(velocities, positions, pbest_positions, gbest_position, w, c1, c2)
         positions = update_position(positions, velocities, lower_bound, upper_bound)
 
         # Evaluate new fitness
         fitness_values = fitness(positions, fitness_func)
-
+        fitness_calls += len(positions)
         # Update pbest and gbest
         pbest_positions, pbest_fitness = update_pbest(positions, fitness_values, pbest_positions, pbest_fitness, problem_type)
         gbest_position, gbest_fitness = update_gbest(pbest_positions, pbest_fitness, gbest_position, gbest_fitness, problem_type)
@@ -68,45 +69,113 @@ def pso(
 
     return gbest_position, gbest_fitness, fitness_history
 
-##########test#####################
 
-def sphere(x):
-    """Simple benchmark: minimize sum of squares"""
-    return np.sum(x**2)
+def genetic(
+    pop_size,
+    chromosome_length,
+    lower_bound,
+    upper_bound,
+    fitness_func,
+    selection_method,
+    crossover_func,
+    mutation_func,
+    replacement_func,
+    problem_type="min",
+    mutation_rate=0.1,
+    crossover_rate=0.75,
+    a=0.5,
+    max_fitness_calls=40000
+):
+    # Initialize population
+    population = initial_real_population(pop_size, chromosome_length, lower_bound, upper_bound)
+    fitness_calls = 0
+    fitness_history = []
 
-if __name__ == "__main__":
-    start = timer()
+    # Evaluate initial population
+    fit = fitness(population, fitness_func)
+    fitness_calls += len(population)
 
-    # Parameters
-    num_particles = 30
-    dim = 5
-    lower_bound = -5.12
-    upper_bound = 5.12
+    while fitness_calls < max_fitness_calls:
+        # Selection
+        parents = selection_method(population, fit, num_parents=int(pop_size / 2))
 
-    # Run PSO
-    gbest_position, gbest_fitness, fitness_history = pso(
-        pop_size=num_particles,
-        dim=dim,
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
-        velocity_lower_bound=-1,
-        velocity_upper_bound=1,
-        fitness_func=sphere,   # Change to rastrigin for more challenge
-        problem_type="min"
-    )
+        # Variation
+        offspring = crossover_func(parents, a=a, crossover_rate=crossover_rate)
+        offspring = mutation_func(offspring, mutation_rate=mutation_rate)
 
-    end = timer()
+        # Evaluate offspring
+        offspring_fit = fitness(offspring, fitness_func)
+        fitness_calls += len(offspring)
 
-    # Print results
-    print("Best Position:", gbest_position)
-    print("Best Fitness:", gbest_fitness)
-    print("Execution Time:", end - start, "seconds")
+        # Replacement
+        if replacement_func.__name__ == "plus_strategy":
+            population = replacement_func(population, fit, offspring, offspring_fit)
+        elif replacement_func.__name__ == "comma_strategy":
+            population = replacement_func(offspring, offspring_fit, pop_size)
+        else:
+            raise ValueError("Replacement function not recognized")
 
-    # Plot convergence
-    plt.plot(fitness_history, label="Fitness")
-    plt.xlabel("Iteration")
-    plt.ylabel("Best Fitness")
-    plt.title("PSO Convergence")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+        # Record best fitness
+        if problem_type == "max":
+            best_idx = np.argmax(fit)
+        else:  # min
+            best_idx = np.argmin(fit)
+        fitness_history.append(fit[best_idx])
+
+        # Update fitness
+        fit = fitness(population, fitness_func)
+
+    # Final best solution
+    if problem_type == "max":
+        best_idx = np.argmax(fit)
+    else:
+        best_idx = np.argmin(fit)
+
+    best_solution = population[best_idx]
+    best_fitness = fit[best_idx]
+    return best_solution, best_fitness, fitness_history
+
+
+
+best_position_pso, best_fitness_pso, fitness_history_pso = pso(
+    pop_size = 50,
+    dim = 2,
+    lower_bound = -5.12,
+    upper_bound = 5.12,
+    velocity_lower_bound = -1,
+    velocity_upper_bound= 1,
+    fitness_func = "sphere",
+    w=0.74,
+    c1=1.42,
+    c2=1.42,
+    problem_type="min",
+    max_fitness_calls=40000
+)
+
+best_position_ga, best_fitness_ga, fitness_history_ga = genetic(
+    pop_size = 50,
+    chromosome_length = 2,
+    lower_bound = -5.12,
+    upper_bound = 5.12,
+    fitness_func = "sphere",
+    selection_method = proportional_selection,
+    crossover_func = simple_arithmetic_crossover,
+    mutation_func = swap_mutation,
+    replacement_func = plus_strategy,
+    problem_type="min",
+    mutation_rate=0.1,
+    crossover_rate=0.75,
+    a=0.5,
+    max_fitness_calls=40000
+)
+
+
+start = timer()
+print("ga best position:", best_position_ga)
+print("ga best fitness:", best_fitness_ga)
+print("--------------------")
+print("pso best position:", best_position_pso)
+print("pso best fitness:", best_fitness_pso)
+
+end = timer()
+print(f"All done! Elapsed time: {end - start:.2f} seconds")

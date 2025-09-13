@@ -24,7 +24,7 @@ def genetic(
     mutation_rate=0.1,
     crossover_rate=0.75,
     a=0.5,
-    max_fitness_calls=400
+    max_fitness_calls=40000
 ):
     # Initialize population
     population = initial_real_population(pop_size, chromosome_length, lower_bound, upper_bound)
@@ -88,7 +88,7 @@ def pso(
     c1=1.42,
     c2=1.42,
     problem_type="min",
-    max_fitness_calls=400
+    max_fitness_calls=40000
 ):
     """
     Generic PSO framework with stopping condition on total fitness evaluations.
@@ -160,7 +160,7 @@ def run_ga_on_function(f, num_runs=20):
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             fitness_func=f.name,  # pass the actual function object
-            selection_method=proportional_selection,
+            selection_method=truncation_selection,
             crossover_func=simple_arithmetic_crossover,
             mutation_func=complement_mutation,
             replacement_func=plus_strategy,
